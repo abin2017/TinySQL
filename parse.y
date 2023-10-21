@@ -10,6 +10,12 @@ struct Node {
 };
 struct Node* makeNode(char* s);
 void printTree(struct Node* root,int level);
+
+#define yyerror printf
+
+int yywrap(void) {
+    return 1;  // 返回非零值，表示已到达输入的末尾
+}
 %}
 
 %start program
