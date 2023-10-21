@@ -3,3 +3,5 @@ sql_parser/parse.tab.c
 sql_parser/parse.tab.h
 sql_parser/sql_parser
 obj
+*.o
+parser

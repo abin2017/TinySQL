@@ -1,20 +1,20 @@
 CC = gcc
 AR = ar
 
-CFLAGS :=
+CFLAGS := -g -O0
 DEFS := 
+LINKFLAGS :=
 
-OBJDIR := obj
-OBJS := $(OBJDIR)/sql_porting.o \
-		$(OBJDIR)/parse.tab.o 
+OBJDIR :=
+OBJS := sql_porting.o \
+		parse.tab.o 
 
-TARGET = sql_parser
+TARGET = parser
 
-$(TARGET): check_folder	$(OBJS)
-	$(AR)  crs $(OBJDIR)/$(TARGET) $(OBJS)
-
-$(OBJS):	$(OBJDIR)/%.o:%.c
-	$(CC)  $(CFLAGS) ${DEFS} -c $<  -o $@
+$(TARGET): 	$(OBJS) 
+	$(CC) $(CFLAGS) $^ -o $@  $(LINKFLAGS)
+	chmod +x $(TARGET)
+	
 
 check_folder:
 	@if [ ! -d "$(OBJDIR)" ]; then \
@@ -23,5 +23,5 @@ check_folder:
 	fi
 
 clean:
-	rm -rf ./$(OBJDIR) $(TARGET)
+	rm -rf *.o $(TARGET)
 
