@@ -1,4 +1,4 @@
-a.out
-lex.yy.c
-parse.tab.c
-parse.tab.h
+sql_parser/lex.yy.c
+sql_parser/parse.tab.c
+sql_parser/parse.tab.h
+sql_parser/sql_parser

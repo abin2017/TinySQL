@@ -15,5 +15,6 @@ It does the lexical analysis by generating tokens in the flex file. These tokens
 To run the file on terminal, use the following commnands:
 
 ```bash
-make clean & make
+cd sql_parser
+make clean && make
 ```
