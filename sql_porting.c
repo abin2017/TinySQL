@@ -26,7 +26,7 @@ static int count  = 0;
 #endif
 
 #define MAX_BLOCK_COUNT 8
-#define ONE_BLOCK_SIZE 3072
+#define ONE_BLOCK_SIZE 4096
 
 
 typedef struct{
@@ -80,6 +80,20 @@ void    sql_tiny_platform_node_free (){
         }
     }
     memset(&opt, 0, sizeof(opt));
+}
+
+char *  sql_tiny_platform_node_strdup (char *str){
+    if(str){
+        int len = strlen(str);
+        char * out = sql_tiny_platform_node_alloc(len + 1);
+
+        if(out){
+            strcpy(out, str);
+            return out;
+        }
+    }
+
+    return NULL;
 }
 
 

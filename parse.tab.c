@@ -69,14 +69,20 @@
 #include<string.h>
 #include "sql_porting.h"
 
+#define MAX_PARAM_XX 32
+
 struct Node {
     struct Node* child;
     struct Node* sibling;
     char str[150];
+    char *value;
 };
-struct Node* makeNode(char* s);
-void freeNode(struct Node* p_node);
+//struct Node* makeNode(char* s);
+struct Node* makeNodeX(char* s, char *str[], int *index);
+//void freeNode(struct Node* p_node);
 void printTree(struct Node* root,int level);
+
+#define makeNode(s) makeNodeX(s, params, &param_index)
 
 #define yyerror SQL_TINY_PLATFORM_ERR
 
@@ -84,7 +90,7 @@ int yywrap(void) {
     return 1;  // 返回非零值，表示已到达输入的末尾
 }
 
-extern int yylex (void);
+extern int yylex (char **pp_yytext);
 
 //#line 86 "parse.tab.c" /* yacc.c:339  */
 
@@ -1251,11 +1257,14 @@ yyparse (void)
     YYSTYPE *yyvsp;
 
     YYSIZE_T yystacksize;
+    char * params[MAX_PARAM_XX] = {0};
+    int param_index = 0;
 
   int yyn;
   int yyresult;
   /* Lookahead token as an internal (translated) token number.  */
   int yytoken = 0;
+  char *yytext = NULL;
   /* The variables used to return semantic value and location from the
      action routines.  */
   YYSTYPE yyval = {NULL};
@@ -1384,7 +1393,15 @@ yybackup:
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
-      yychar = yylex ();
+      yychar = yylex ((char **)&yytext);
+      if(yytext){
+        //SQL_TINY_PLATFORM_LOG("-------------- %s\n", yytext);
+        if(param_index >= MAX_PARAM_XX){
+          sql_tiny_platform_assert(0);
+        }
+        params[param_index] = sql_tiny_platform_node_strdup(yytext);
+        param_index ++;
+      }
     }
 
   if (yychar <= YYEOF)
@@ -2888,12 +2905,20 @@ yyreturn:
 
 #include"lex.yy.c"
 
-struct Node* makeNode(char* s) {
+struct Node* makeNodeX(char* s, char *str[], int *index) {
     struct Node *node = sql_tiny_platform_node_alloc(sizeof(struct Node));
     node->child = NULL;
     node->sibling = NULL;
     strcpy(node->str,s);
-    //SQL_TINY_PLATFORM_LOG("[makeNode] %s\n", s);
+    node->value = NULL;
+
+    if(*index > 0 && s){
+      if(strcmp("IDENTIFIER", s) == 0 || strcmp("STRING", s) == 0 || strcmp("NUMBER", s) == 0){
+        *index = *index - 1;
+        node->value = str[*index];    
+      }
+    }
+    SQL_TINY_PLATFORM_LOG("[makeNode] %s\n", s);
     return node;
 }
 
@@ -2935,6 +2960,14 @@ void printTree(struct Node* root,int level)
 		SQL_TINY_PLATFORM_LOG("-%s\n",root->str);
 		SQL_TINY_PLATFORM_LOG("\033[0m");
 	}
+
+  if(root->value){
+    for(int i=0;i<level;i++)
+		  SQL_TINY_PLATFORM_LOG("	");
+    SQL_TINY_PLATFORM_LOG("\033[0;34m");
+		SQL_TINY_PLATFORM_LOG("-%s\n",root->value);
+		SQL_TINY_PLATFORM_LOG("\033[0m");
+  }
 	if(root->child!=NULL)
 	{
 		root = root->child;
@@ -2971,12 +3004,13 @@ int main()
 
   #else
 
-  sql_tiny_platform_start("SELECT * FROM 'Customers' WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
-  ret = yyparse();
-  if(!ret){
-    yylex_destroy();
-  }
+  //sql_tiny_platform_start("SELECT * FROM 'Customers' WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  //ret = yyparse();
+  //if(!ret){
+  //  yylex_destroy();
+  //}
 
+  //sql_tiny_platform_start("INSERT INTO users (id, name, age) VALUES (1, 'John Doe', 25);");
   sql_tiny_platform_start("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
   ret = yyparse();
   if(ret){

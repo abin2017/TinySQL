@@ -5,6 +5,11 @@
 
 #define SQL_TINY_PLATFORM_ERR printf
 #define SQL_TINY_PLATFORM_LOG printf
+//#define SQL_TINY_PLATFORM_INFO printf
+
+//#define SQL_TINY_PLATFORM_ERR(...) do{}while(0)
+//#define SQL_TINY_PLATFORM_LOG(...) do{}while(0)
+#define SQL_TINY_PLATFORM_INFO(...) do{}while(0)
 
 #ifdef SUPPORT_INTERACTIVE
 #define TINY_STDIN      stdin
@@ -19,6 +24,8 @@
 void *  sql_tiny_platform_node_alloc (size_t  size );
 
 void    sql_tiny_platform_node_free ();
+
+char *  sql_tiny_platform_node_strdup (char *str);
 
 void *  sql_tiny_platform_alloc (size_t  size );
 

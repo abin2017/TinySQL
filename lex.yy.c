@@ -1188,13 +1188,18 @@ static int input ( void );
 /* Default declaration of generated scanner - a define so the user can
  * easily add parameters.
  */
-#ifndef YY_DECL
-#define YY_DECL_IS_OURS 1
 
-extern int yylex (void);
+#if 0
 
-#define YY_DECL int yylex (void)
-#endif /* !YY_DECL */
+	#ifndef YY_DECL
+	#define YY_DECL_IS_OURS 1
+
+	extern int yylex (void);
+
+	#define YY_DECL int yylex (void)
+	#endif /* !YY_DECL */
+
+#endif
 
 /* Code executed at the beginning of each rule, after yytext and yyleng
  * have been set up.
@@ -1213,11 +1218,14 @@ extern int yylex (void);
 
 /** The main scanner function which does all the work.
  */
-YY_DECL
+//YY_DECL
+int yylex (char **pp_yytext)
 {
 	yy_state_type yy_current_state;
 	char *yy_cp, *yy_bp;
 	int yy_act;
+
+	*pp_yytext = NULL;
     
 	if ( !(yy_init) )
 		{
@@ -1315,294 +1323,294 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 //#line 8 "flex.l"
-{printf("%s\t\tCREATE\n",yytext); return CREATE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tCREATE\n",yytext); return CREATE; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
 //#line 9 "flex.l"
-{printf("%s\t\tDELETE\n",yytext); return DELETE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDELETE\n",yytext); return DELETE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
 //#line 10 "flex.l"
-{printf("%s\t\tDROP\n",yytext); return DROP; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDROP\n",yytext); return DROP; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 //#line 11 "flex.l"
-{printf("%s\t\tDATABASE\n",yytext); return DATABASE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDATABASE\n",yytext); return DATABASE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
 //#line 12 "flex.l"
-{printf("%s\t\tTABLE\n",yytext); return TABLE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tTABLE\n",yytext); return TABLE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
 //#line 13 "flex.l"
-{printf("%s\t\tSELECT\n",yytext); return SELECT; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSELECT\n",yytext); return SELECT; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 //#line 14 "flex.l"
-{printf("%s\t\tINSERT_INTO\n",yytext); return INSERT_INTO; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tINSERT_INTO\n",yytext); return INSERT_INTO; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 //#line 15 "flex.l"
-{printf("%s\t\tUPDATE\n",yytext); return UPDATE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tUPDATE\n",yytext); return UPDATE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 //#line 16 "flex.l"
-{printf("%s\t\tSET\n",yytext); return SET; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSET\n",yytext); return SET; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 //#line 17 "flex.l"
-{printf("%s\t\tFROM\n",yytext); return FROM; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tFROM\n",yytext); return FROM; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 //#line 18 "flex.l"
-{printf("%s\t\tWHERE\n",yytext); return WHERE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tWHERE\n",yytext); return WHERE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 //#line 19 "flex.l"
-{printf("%s\t\tAS\n",yytext); return AS; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tAS\n",yytext); return AS; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 //#line 20 "flex.l"
-{printf("%s\t\tANY\n",yytext); return ANY; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tANY\n",yytext); return ANY; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 //#line 21 "flex.l"
-{printf("%s\t\tALL\n",yytext); return ALL; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tALL\n",yytext); return ALL; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 //#line 22 "flex.l"
-{printf("%s\t\tASC\n",yytext); return ASC; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tASC\n",yytext); return ASC; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 //#line 23 "flex.l"
-{printf("%s\t\tDESC\n",yytext); return DESC; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDESC\n",yytext); return DESC; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 //#line 24 "flex.l"
-{printf("%s\t\tON\n",yytext); return ON; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tON\n",yytext); return ON; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 //#line 25 "flex.l"
-{printf("%s\t\tORDER_BY\n",yytext); return ORDER_BY; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tORDER_BY\n",yytext); return ORDER_BY; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 //#line 26 "flex.l"
-{printf("%s\t\tHAVING\n",yytext); return HAVING; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tHAVING\n",yytext); return HAVING; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 //#line 27 "flex.l"
-{printf("%s\t\tGROUP_BY\n",yytext); return GROUP_BY; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tGROUP_BY\n",yytext); return GROUP_BY; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 //#line 28 "flex.l"
-{printf("%s\t\tDISTINCT\n",yytext); return DISTINCT; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDISTINCT\n",yytext); return DISTINCT; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 //#line 29 "flex.l"
-{printf("%s\t\tNOT_LIKE\n",yytext); return NOT_LIKE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tNOT_LIKE\n",yytext); return NOT_LIKE; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 //#line 30 "flex.l"
-{printf("%s\t\tLIKE\n",yytext); return LIKE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tLIKE\n",yytext); return LIKE; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 //#line 31 "flex.l"
-{printf("%s\t\tNOT_BETWEEN\n",yytext); return NOT_BETWEEN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tNOT_BETWEEN\n",yytext); return NOT_BETWEEN; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 //#line 32 "flex.l"
-{printf("%s\t\tBETWEEN\n",yytext); return BETWEEN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tBETWEEN\n",yytext); return BETWEEN; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 //#line 33 "flex.l"
-{printf("%s\t\tINNER_JOIN\n",yytext); return INNER_JOIN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tINNER_JOIN\n",yytext); return INNER_JOIN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 //#line 34 "flex.l"
-{printf("%s\t\tLEFT_JOIN\n",yytext); return LEFT_JOIN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tLEFT_JOIN\n",yytext); return LEFT_JOIN; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 //#line 35 "flex.l"
-{printf("%s\t\tRIGHT_JOIN\n",yytext); return RIGHT_JOIN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tRIGHT_JOIN\n",yytext); return RIGHT_JOIN; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 //#line 36 "flex.l"
-{printf("%s\t\tFULL_JOIN\n",yytext); return FULL_JOIN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tFULL_JOIN\n",yytext); return FULL_JOIN; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 //#line 37 "flex.l"
-{printf("%s\t\tUNION_ALL\n",yytext); return UNION_ALL; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tUNION_ALL\n",yytext); return UNION_ALL; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 //#line 38 "flex.l"
-{printf("%s\t\tUNION\n",yytext); return UNION; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tUNION\n",yytext); return UNION; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 //#line 39 "flex.l"
-{printf("%s\t\tNOT_IN\n",yytext); return NOT_IN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tNOT_IN\n",yytext); return NOT_IN; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 //#line 40 "flex.l"
-{printf("%s\t\tIN\n",yytext); return IN; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tIN\n",yytext); return IN; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 //#line 41 "flex.l"
-{printf("%s\t\tLIMIT\n",yytext); return LIMIT; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tLIMIT\n",yytext); return LIMIT; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 //#line 42 "flex.l"
-{printf("%s\t\tEXISTS\n",yytext); return EXISTS; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tEXISTS\n",yytext); return EXISTS; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 //#line 43 "flex.l"
-{printf("%s\t\tVALUES\n",yytext); return VALUES; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tVALUES\n",yytext); return VALUES; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 //#line 44 "flex.l"
-{printf("%s\t\tCOUNT\n",yytext); return COUNT; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tCOUNT\n",yytext); return COUNT; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
 //#line 45 "flex.l"
-{printf("%s\t\tAVERAGE\n",yytext); return AVERAGE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tAVERAGE\n",yytext); return AVERAGE; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
 //#line 46 "flex.l"
-{printf("%s\t\tSUM\n",yytext); return SUM; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSUM\n",yytext); return SUM; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
 //#line 47 "flex.l"
-{printf("%s\t\tMINIMUM\n",yytext); return MINIMUM; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tMINIMUM\n",yytext); return MINIMUM; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 //#line 48 "flex.l"
-{printf("%s\t\tMAXIMUM\n",yytext); return MAXIMUM; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tMAXIMUM\n",yytext); return MAXIMUM; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
 //#line 49 "flex.l"
-{printf("%s\t\tEQUALITY_OPERATOR\n",yytext); return EQUALITY_OPERATOR; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tEQUALITY_OPERATOR\n",yytext); return EQUALITY_OPERATOR; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
 //#line 50 "flex.l"
-{printf("%s\t\tRELATIONAL_OPERATOR\n",yytext); return RELATIONAL_OPERATOR; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tRELATIONAL_OPERATOR\n",yytext); return RELATIONAL_OPERATOR; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
 //#line 51 "flex.l"
-{printf("%s\t\tAND\n",yytext); return AND; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tAND\n",yytext); return AND; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
 //#line 52 "flex.l"
-{printf("%s\t\tOR\n",yytext); return OR; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tOR\n",yytext); return OR; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
 //#line 53 "flex.l"
-{printf("%s\t\tIS_NULL\n",yytext); return IS_NULL; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tIS_NULL\n",yytext); return IS_NULL; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
 //#line 54 "flex.l"
-{printf("%s\t\tIS_NOT_NULL\n",yytext); return IS_NOT_NULL; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tIS_NOT_NULL\n",yytext); return IS_NOT_NULL; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
 //#line 55 "flex.l"
-{printf("%s\t\tNOT\n",yytext); return NOT; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tNOT\n",yytext); return NOT; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
 //#line 56 "flex.l"
-{printf("%s\t\t(\n",yytext); return '('; }
+{SQL_TINY_PLATFORM_INFO("%s\t\t(\n",yytext); return '('; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
 //#line 57 "flex.l"
-{printf("%s\t\t)\n",yytext); return ')'; }
+{SQL_TINY_PLATFORM_INFO("%s\t\t)\n",yytext); return ')'; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
 //#line 58 "flex.l"
-{printf("%s\t\t;\n",yytext); return ';'; }
+{SQL_TINY_PLATFORM_INFO("%s\t\t;\n",yytext); return ';'; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
 //#line 59 "flex.l"
-{printf("%s\t\tCOMMA\n",yytext); return COMMA; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tCOMMA\n",yytext); return COMMA; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
 //#line 60 "flex.l"
-{printf("%s\t\tDATATYPE\n",yytext); return DATATYPE; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tDATATYPE\n",yytext); return DATATYPE; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
 //#line 61 "flex.l"
-{printf("%s\t\tIDENTIFIER\n",yytext); return IDENTIFIER; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tIDENTIFIER\n",yytext); *pp_yytext = yytext;return IDENTIFIER; }
 	YY_BREAK
 case 56:
 /* rule 56 can match eol */
 YY_RULE_SETUP
 //#line 62 "flex.l"
-{printf("%s\t\tSTRING\n",yytext); return STRING; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSTRING\n",yytext); *pp_yytext = yytext;return STRING; }
 	YY_BREAK
 case 57:
 /* rule 57 can match eol */
 YY_RULE_SETUP
 //#line 63 "flex.l"
-{printf("%s\t\tSTRING\n",yytext); return STRING; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSTRING\n",yytext); *pp_yytext = yytext;return STRING; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
 //#line 64 "flex.l"
-{printf("%s\t\tNUMBER\n",yytext); return NUMBER; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tNUMBER\n",yytext); *pp_yytext = yytext;return NUMBER; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
 //#line 65 "flex.l"
-{printf("%s\t\tSELECTALL\n",yytext); return SELECTALL; }
+{SQL_TINY_PLATFORM_INFO("%s\t\tSELECTALL\n",yytext); return SELECTALL; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
