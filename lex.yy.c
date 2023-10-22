@@ -1114,7 +1114,7 @@ static int input ( void );
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
-#define ECHO do { if (sql_tiny_fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
+#define ECHO do { if (sql_tiny_platform_fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
@@ -1132,14 +1132,14 @@ static int input ( void );
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
-		if ( c == EOF && sql_tiny_ferror( yyin ) ) \
+		if ( c == EOF && sql_tiny_platform_ferror( yyin ) ) \
 			YY_FATAL_ERROR( "input in flex scanner failed" ); \
 		result = n; \
 		} \
 	else \
 		{ \
 		errno=0; \
-		while ( (result = (int) sql_tiny_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_ferror(yyin)) \
+		while ( (result = (int) sql_tiny_platform_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_platform_ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -1156,7 +1156,7 @@ static int input ( void );
 #else
 #ifndef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
-		while ( (result = (int) sql_tiny_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_ferror(yyin)) \
+		while ( (result = (int) sql_tiny_platform_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_platform_ferror(yyin)) \
 			{ \
 				YY_FATAL_ERROR( "input in flex scanner failed" ); \
 				break; \
@@ -2192,7 +2192,7 @@ static void yy_load_buffer_state  (void)
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (sql_tiny_isatty( sql_tiny_fileno(file) ) > 0) : 0;
+        b->yy_is_interactive = file ? (sql_tiny_platform_isatty( sql_tiny_platform_fileno(file) ) > 0) : 0;
     #ifdef SUPPORT_INTERACTIVE
 	errno = oerrno;
 	#endif
@@ -2414,8 +2414,8 @@ YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len )
 #endif
 
 static void yynoreturn yy_fatal_error (const char* msg ){
-	SQL_TINY_ERR("%s\n", msg );
-	sql_tiny_assert( 0 );
+	SQL_TINY_PLATFORM_ERR("%s\n", msg );
+	sql_tiny_platform_assert( 0 );
 }
 
 /* Redefine yyless() so it works in section 3 code. */
@@ -2592,7 +2592,7 @@ static int yy_flex_strlen (const char * s )
 
 static void *yyalloc (yy_size_t  size )
 {
-	return sql_tiny_alloc((yy_size_t)size);
+	return sql_tiny_platform_alloc((yy_size_t)size);
 }
 
 static void *yyrealloc  (void * ptr, yy_size_t  size )
@@ -2605,12 +2605,12 @@ static void *yyrealloc  (void * ptr, yy_size_t  size )
 	 * any pointer type to void*, and deal with argument conversions
 	 * as though doing an assignment.
 	 */
-	return sql_tiny_realloc(ptr, size);
+	return sql_tiny_platform_realloc(ptr, size);
 }
 
 static void yyfree (void * ptr )
 {
-	sql_tiny_free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
+	sql_tiny_platform_free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"

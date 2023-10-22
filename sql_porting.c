@@ -37,20 +37,20 @@ typedef struct{
 
 static tiny_node_buffer_t opt = {{NULL}};
 
-void *  sql_tiny_mem_dbg (char *f, int line){
+void *  sql_tiny_platform_mem_dbg (char *f, int line){
     #ifdef SUPPORT_DBG
-    SQL_TINY_LOG("%s, line %d, mem peices %d\n", f, line, count);
+    SQL_TINY_PLATFORM_LOG("%s, line %d, mem peices %d\n", f, line, count);
     #endif
 }
 
-void *  sql_tiny_node_alloc (size_t  size ){
+void *  sql_tiny_platform_node_alloc (size_t  size ){
     try_next:
     if(opt.buffer_index >= MAX_BLOCK_COUNT || size > ONE_BLOCK_SIZE){
         return NULL;
     }
 
     if(opt.buffer[opt.buffer_index] == NULL){
-        opt.buffer[opt.buffer_index] = sql_tiny_alloc(ONE_BLOCK_SIZE);
+        opt.buffer[opt.buffer_index] = sql_tiny_platform_alloc(ONE_BLOCK_SIZE);
         if(opt.buffer[opt.buffer_index] == NULL){
             return NULL;
         }
@@ -71,12 +71,12 @@ void *  sql_tiny_node_alloc (size_t  size ){
     }
 }
 
-void    sql_tiny_node_free (){
+void    sql_tiny_platform_node_free (){
     int i = 0;
 
     for(i = 0; i < MAX_BLOCK_COUNT; i++){
         if(opt.buffer[i]){
-            sql_tiny_free(opt.buffer[i]);
+            sql_tiny_platform_free(opt.buffer[i]);
         }
     }
     memset(&opt, 0, sizeof(opt));
@@ -84,7 +84,7 @@ void    sql_tiny_node_free (){
 
 
 
-void *  sql_tiny_alloc (size_t  size ){
+void *  sql_tiny_platform_alloc (size_t  size ){
     void * ptr = malloc(size);
 
     #ifdef SUPPORT_DBG
@@ -96,7 +96,7 @@ void *  sql_tiny_alloc (size_t  size ){
     return ptr;
 }
 
-void *  sql_tiny_realloc  (void * ptr, size_t  size ){
+void *  sql_tiny_platform_realloc  (void * ptr, size_t  size ){
     void * ptrx = realloc  (ptr, size );
 
     #ifdef SUPPORT_DBG
@@ -107,7 +107,7 @@ void *  sql_tiny_realloc  (void * ptr, size_t  size ){
     return ptrx;
 }
 
-void    sql_tiny_free (void *__ptr){
+void    sql_tiny_platform_free (void *__ptr){
     #ifdef SUPPORT_DBG
     if(__ptr){
         count --;
@@ -117,18 +117,18 @@ void    sql_tiny_free (void *__ptr){
     free(__ptr);
 }
 
-void    sql_tiny_assert(int expression){
+void    sql_tiny_platform_assert(int expression){
     assert(expression);
 }
 
-void    sql_tiny_start(char *cmd){
+void    sql_tiny_platform_start(char *cmd){
     #ifndef SUPPORT_INTERACTIVE
     strncpy(sql_buffer, cmd, SQL_BUF_LENGTH - 1);
     sql_buffer_pos = 0;
     #endif
 }
 
-size_t sql_tiny_fread (void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __stream){
+size_t sql_tiny_platform_fread (void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __stream){
     #ifdef SUPPORT_INTERACTIVE
     return fread(__ptr, __size, __n, __stream);
     #else
@@ -160,15 +160,15 @@ size_t sql_tiny_fread (void *__restrict __ptr, size_t __size, size_t __n, FILE *
     #endif
 }
 
-size_t sql_tiny_fwrite (const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s){
+size_t sql_tiny_platform_fwrite (const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s){
     #ifdef SUPPORT_INTERACTIVE
     return fwrite(__ptr, __size, __n, __s);
     #else
-    SQL_TINY_LOG((char *)__ptr);
+    SQL_TINY_PLATFORM_LOG((char *)__ptr);
     #endif
 }
 
-int sql_tiny_ferror (FILE *__stream){
+int sql_tiny_platform_ferror (FILE *__stream){
     #ifdef SUPPORT_INTERACTIVE
     return ferror(__stream);
     #else
@@ -177,7 +177,7 @@ int sql_tiny_ferror (FILE *__stream){
 }
 
 
-int sql_tiny_fileno (FILE *__stream){
+int sql_tiny_platform_fileno (FILE *__stream){
     #ifdef SUPPORT_INTERACTIVE
     return fileno(__stream);
     #else
@@ -185,7 +185,7 @@ int sql_tiny_fileno (FILE *__stream){
     #endif
 }
 
-int sql_tiny_isatty (int __fd){
+int sql_tiny_platform_isatty (int __fd){
     #ifdef SUPPORT_INTERACTIVE
     return isatty (__fd);
     #else

@@ -78,7 +78,7 @@ struct Node* makeNode(char* s);
 void freeNode(struct Node* p_node);
 void printTree(struct Node* root,int level);
 
-#define yyerror SQL_TINY_ERR
+#define yyerror SQL_TINY_PLATFORM_ERR
 
 int yywrap(void) {
     return 1;  // 返回非零值，表示已到达输入的末尾
@@ -369,13 +369,13 @@ typedef short int yytype_int16;
 #   endif
 #  endif
 #  ifndef YYMALLOC
-#   define YYMALLOC sql_tiny_alloc
+#   define YYMALLOC sql_tiny_platform_alloc
 #   if ! defined malloc && ! defined EXIT_SUCCESS
 void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
-#   define YYFREE sql_tiny_free
+#   define YYFREE sql_tiny_platform_free
 #   if ! defined free && ! defined EXIT_SUCCESS
 void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
@@ -1467,10 +1467,10 @@ yyreduce:
     { 	
 						(yyval.node) = makeNode("program");
 						(yyval.node)->child = (yyvsp[-1].node);
-						SQL_TINY_LOG("\n\n\t\t\t\t\t\tParsing tree\n");
-						SQL_TINY_LOG("\t\t\t\t\t\t------------\n");
+						SQL_TINY_PLATFORM_LOG("\n\n\t\t\t\t\t\tParsing tree\n");
+						SQL_TINY_PLATFORM_LOG("\t\t\t\t\t\t------------\n");
 						printTree((yyval.node),0);
-						SQL_TINY_LOG("INPUT ACCEPTED.... \n");
+						SQL_TINY_PLATFORM_LOG("INPUT ACCEPTED.... \n");
 						//exit(0);
             ret = yyval.node;
             //yyval.node = NULL;
@@ -1483,10 +1483,10 @@ yyreduce:
     { 
 						(yyval.node) = makeNode("program");
 						(yyval.node)->child = (yyvsp[-1].node);
-						SQL_TINY_LOG("\n\n\t\t\t\t\t\tParsing tree\n");
-						SQL_TINY_LOG("\t\t\t\t\t\t------------\n");
+						SQL_TINY_PLATFORM_LOG("\n\n\t\t\t\t\t\tParsing tree\n");
+						SQL_TINY_PLATFORM_LOG("\t\t\t\t\t\t------------\n");
 						printTree((yyval.node),0);
-						SQL_TINY_LOG("INPUT ACCEPTED.... \n");
+						SQL_TINY_PLATFORM_LOG("INPUT ACCEPTED.... \n");
 						//exit(0);
             ret = yyval.node;
             //yyval.node = NULL;
@@ -2878,7 +2878,7 @@ yyreturn:
   if(ret == NULL){
     printTree(yyval.node, 0);
 
-    sql_tiny_node_free();
+    sql_tiny_platform_node_free();
   }
  
   SQL_MEM_DBG();
@@ -2889,11 +2889,11 @@ yyreturn:
 #include"lex.yy.c"
 
 struct Node* makeNode(char* s) {
-    struct Node *node = sql_tiny_node_alloc(sizeof(struct Node));
+    struct Node *node = sql_tiny_platform_node_alloc(sizeof(struct Node));
     node->child = NULL;
     node->sibling = NULL;
     strcpy(node->str,s);
-    //SQL_TINY_LOG("[makeNode] %s\n", s);
+    //SQL_TINY_PLATFORM_LOG("[makeNode] %s\n", s);
     return node;
 }
 
@@ -2902,7 +2902,7 @@ void freeNode(struct Node* p_node) {
   if(NULL == p_node) {
     return;
   }
-    SQL_TINY_LOG("[freeNode] %s\n", p_node->str);
+    SQL_TINY_PLATFORM_LOG("[freeNode] %s\n", p_node->str);
     struct Node* p_child = p_node->child, *p_item = NULL;
     while(p_child){
       p_item = p_child->sibling;
@@ -2910,7 +2910,7 @@ void freeNode(struct Node* p_node) {
       p_child = p_item;
     }
 
-    sql_tiny_free(p_node);
+    sql_tiny_platform_free(p_node);
 
 }
 #endif
@@ -2922,18 +2922,18 @@ void printTree(struct Node* root,int level)
 	if(root->child==NULL && root->str[0] >= 97 && root->str[0]<=122)
 		return;
 	for(int i=0;i<level;i++)
-		SQL_TINY_LOG("	");
+		SQL_TINY_PLATFORM_LOG("	");
 	if( root->str[0] >= 65 && root->str[0]<=90)
 	{
-		SQL_TINY_LOG("\033[01;33m");
-		SQL_TINY_LOG("-%s\n",root->str);
-		SQL_TINY_LOG("\033[0m");
+		SQL_TINY_PLATFORM_LOG("\033[01;33m");
+		SQL_TINY_PLATFORM_LOG("-%s\n",root->str);
+		SQL_TINY_PLATFORM_LOG("\033[0m");
 	}
 	else
 	{
-		SQL_TINY_LOG("\033[0;32m");
-		SQL_TINY_LOG("-%s\n",root->str);
-		SQL_TINY_LOG("\033[0m");
+		SQL_TINY_PLATFORM_LOG("\033[0;32m");
+		SQL_TINY_PLATFORM_LOG("-%s\n",root->str);
+		SQL_TINY_PLATFORM_LOG("\033[0m");
 	}
 	if(root->child!=NULL)
 	{
@@ -2952,10 +2952,10 @@ int main()
 
   #ifdef SUPPORT_INTERACTIVE
 
-	SQL_TINY_LOG("Enter an SQL query\n");
+	SQL_TINY_PLATFORM_LOG("Enter an SQL query\n");
 	ret = yyparse();
   if(ret){
-    sql_tiny_node_free();
+    sql_tiny_platform_node_free();
   }else{
     yylex_destroy();
   }
@@ -2963,7 +2963,7 @@ int main()
   SQL_MEM_DBG();
   ret = yyparse();
   if(ret){
-    sql_tiny_node_free();
+    sql_tiny_platform_node_free();
   }
 
   yylex_destroy();
@@ -2971,16 +2971,16 @@ int main()
 
   #else
 
-  sql_tiny_start("SELECT * FROM 'Customers' WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  sql_tiny_platform_start("SELECT * FROM 'Customers' WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
   ret = yyparse();
   if(!ret){
     yylex_destroy();
   }
 
-  sql_tiny_start("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  sql_tiny_platform_start("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
   ret = yyparse();
   if(ret){
-    sql_tiny_node_free();
+    sql_tiny_platform_node_free();
   }
 
   yylex_destroy();
@@ -2990,3 +2990,7 @@ int main()
   
   return 0;
 }
+
+
+
+
