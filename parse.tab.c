@@ -67,16 +67,12 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include "sql_grammar_api.h"
 #include "sql_porting.h"
 
 #define MAX_PARAM_XX 32
 
-struct Node {
-    struct Node* child;
-    struct Node* sibling;
-    char str[150];
-    char *value;
-};
+
 //struct Node* makeNode(char* s);
 struct Node* makeNodeX(char* s, char *str[], int *index);
 //void freeNode(struct Node* p_node);
@@ -91,7 +87,7 @@ int yywrap(void) {
 }
 
 extern int yylex (char **pp_yytext);
-
+extern int yylex_destroy  (void);
 //#line 86 "parse.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
@@ -2893,9 +2889,10 @@ yyreturn:
 #endif
 
   if(ret == NULL){
-    printTree(yyval.node, 0);
+    //printTree(yyval.node, 0);
 
     sql_tiny_platform_node_free();
+    yylex_destroy();
   }
  
   SQL_MEM_DBG();
@@ -2979,6 +2976,7 @@ void printTree(struct Node* root,int level)
 	}
 }
 
+#if 0
 int main() 
 {
   struct Node* ret = NULL;
@@ -3024,7 +3022,35 @@ int main()
   
   return 0;
 }
+#endif
+
+stg_node_t *sql_tiny_grammer_api_parse(char *sql){
+
+  sql_tiny_platform_start(sql);
+  return yyparse();
+}
+
+void sql_tiny_grammer_api_end(){
+  sql_tiny_platform_node_free();
+}
+
+void sql_tiny_grammer_api_destroy(){
+  sql_tiny_platform_node_free();
+  yylex_destroy();
+}
 
 
 
+#ifdef SQL_GRAMMER_TEST
+int main() 
+{
 
+  //sql_tiny_grammer_api_parse("INSERT INTO users (id, name, age) VALUES (1, 'John Doe', 25);");
+  sql_tiny_grammer_api_parse("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  sql_tiny_grammer_api_destroy();
+
+  SQL_MEM_DBG();
+
+  return 0;
+}
+#endif

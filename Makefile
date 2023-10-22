@@ -1,7 +1,7 @@
 CC = gcc
 AR = ar
 
-CFLAGS := -g -O0 -Wno-format-security
+CFLAGS := -g -O0 -Wno-format-security -DSQL_GRAMMER_TEST
 DEFS := 
 LINKFLAGS :=
 

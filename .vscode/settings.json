@@ -2,6 +2,7 @@
     "files.associations": {
         "parse.tab.h": "c",
         "sql_porting.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "sql_grammar_api.h": "c"
     }
 }
