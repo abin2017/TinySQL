@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "parse.tab.h": "c",
-        "sql_porting.h": "c"
+        "sql_porting.h": "c",
+        "errno.h": "c"
     }
 }

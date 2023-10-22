@@ -1,7 +1,7 @@
 CC = gcc
 AR = ar
 
-CFLAGS := -g -O0
+CFLAGS := -g -O0 -Wno-format-security
 DEFS := 
 LINKFLAGS :=
 

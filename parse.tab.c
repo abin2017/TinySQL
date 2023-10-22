@@ -75,6 +75,7 @@ struct Node {
     char str[150];
 };
 struct Node* makeNode(char* s);
+void freeNode(struct Node* p_node);
 void printTree(struct Node* root,int level);
 
 #define yyerror SQL_TINY_ERR
@@ -198,7 +199,7 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-int yyparse (void);
+struct Node* yyparse (void);
 
 #endif /* !YY_YY_PARSE_TAB_H_INCLUDED  */
 
@@ -368,13 +369,13 @@ typedef short int yytype_int16;
 #   endif
 #  endif
 #  ifndef YYMALLOC
-#   define YYMALLOC malloc
+#   define YYMALLOC sql_tiny_alloc
 #   if ! defined malloc && ! defined EXIT_SUCCESS
 void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
-#   define YYFREE free
+#   define YYFREE sql_tiny_free
 #   if ! defined free && ! defined EXIT_SUCCESS
 void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
@@ -1225,7 +1226,7 @@ int yynerrs;
 | yyparse.  |
 `----------*/
 
-int
+struct Node*
 yyparse (void)
 {
     int yystate;
@@ -1257,7 +1258,8 @@ yyparse (void)
   int yytoken = 0;
   /* The variables used to return semantic value and location from the
      action routines.  */
-  YYSTYPE yyval;
+  YYSTYPE yyval = {NULL};
+  struct Node* ret = NULL;
 
 #if YYERROR_VERBOSE
   /* Buffer for error messages, and its allocated size.  */
@@ -1469,7 +1471,9 @@ yyreduce:
 						SQL_TINY_LOG("\t\t\t\t\t\t------------\n");
 						printTree((yyval.node),0);
 						SQL_TINY_LOG("INPUT ACCEPTED.... \n");
-						exit(0);
+						//exit(0);
+            ret = yyval.node;
+            //yyval.node = NULL;
 					}
 //#line 1472 "parse.tab.c" /* yacc.c:1646  */
     break;
@@ -1483,7 +1487,9 @@ yyreduce:
 						SQL_TINY_LOG("\t\t\t\t\t\t------------\n");
 						printTree((yyval.node),0);
 						SQL_TINY_LOG("INPUT ACCEPTED.... \n");
-						exit(0);
+						//exit(0);
+            ret = yyval.node;
+            //yyval.node = NULL;
 					}
 //#line 1486 "parse.tab.c" /* yacc.c:1646  */
     break;
@@ -2673,6 +2679,9 @@ yyreduce:
   else
     yystate = yydefgoto[yyn - YYNTOKENS];
 
+  if(ret != NULL){
+    YYABORT;
+  }
   goto yynewstate;
 
 
@@ -2865,19 +2874,46 @@ yyreturn:
   if (yymsg != yymsgbuf)
     YYSTACK_FREE (yymsg);
 #endif
-  return yyresult;
+
+  if(ret == NULL){
+    printTree(yyval.node, 0);
+
+    sql_tiny_node_free();
+  }
+ 
+  SQL_MEM_DBG();
+  return ret;
 }
 //#line 728 "parse.y" /* yacc.c:1906  */
 
 #include"lex.yy.c"
 
 struct Node* makeNode(char* s) {
-    struct Node *node = malloc(sizeof(struct Node));
+    struct Node *node = sql_tiny_node_alloc(sizeof(struct Node));
     node->child = NULL;
     node->sibling = NULL;
     strcpy(node->str,s);
+    //SQL_TINY_LOG("[makeNode] %s\n", s);
     return node;
 }
+
+#if 0
+void freeNode(struct Node* p_node) {
+  if(NULL == p_node) {
+    return;
+  }
+    SQL_TINY_LOG("[freeNode] %s\n", p_node->str);
+    struct Node* p_child = p_node->child, *p_item = NULL;
+    while(p_child){
+      p_item = p_child->sibling;
+      freeNode(p_child);
+      p_child = p_item;
+    }
+
+    sql_tiny_free(p_node);
+
+}
+#endif
 
 void printTree(struct Node* root,int level)
 {
@@ -2912,6 +2948,45 @@ void printTree(struct Node* root,int level)
 
 int main() 
 {
+  struct Node* ret = NULL;
+
+  #ifdef SUPPORT_INTERACTIVE
+
 	SQL_TINY_LOG("Enter an SQL query\n");
-	yyparse();
+	ret = yyparse();
+  if(ret){
+    sql_tiny_node_free();
+  }else{
+    yylex_destroy();
+  }
+  
+  SQL_MEM_DBG();
+  ret = yyparse();
+  if(ret){
+    sql_tiny_node_free();
+  }
+
+  yylex_destroy();
+  SQL_MEM_DBG();
+
+  #else
+
+  sql_tiny_start("SELECT * FROM 'Customers' WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  ret = yyparse();
+  if(!ret){
+    yylex_destroy();
+  }
+
+  sql_tiny_start("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  ret = yyparse();
+  if(ret){
+    sql_tiny_node_free();
+  }
+
+  yylex_destroy();
+  SQL_MEM_DBG();
+
+  #endif
+  
+  return 0;
 }

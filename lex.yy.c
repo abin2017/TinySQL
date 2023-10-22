@@ -18,11 +18,13 @@
 /* begin standard C headers. */
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
+
 #include <stdlib.h>
 
 #include "sql_porting.h"
-
+#ifdef SUPPORT_INTERACTIVE
+#include <errno.h>
+#endif
 /* end standard C headers. */
 
 /* flex integer type definitions */
@@ -1112,12 +1114,13 @@ static int input ( void );
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
-#define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
+#define ECHO do { if (sql_tiny_fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
  * is returned in "result".
  */
+#ifdef SUPPORT_INTERACTIVE
 #ifndef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
@@ -1129,14 +1132,14 @@ static int input ( void );
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
 			buf[n++] = (char) c; \
-		if ( c == EOF && ferror( yyin ) ) \
+		if ( c == EOF && sql_tiny_ferror( yyin ) ) \
 			YY_FATAL_ERROR( "input in flex scanner failed" ); \
 		result = n; \
 		} \
 	else \
 		{ \
 		errno=0; \
-		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && ferror(yyin)) \
+		while ( (result = (int) sql_tiny_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -1150,7 +1153,18 @@ static int input ( void );
 \
 
 #endif
+#else
+#ifndef YY_INPUT
+#define YY_INPUT(buf,result,max_size) \
+		while ( (result = (int) sql_tiny_fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && sql_tiny_ferror(yyin)) \
+			{ \
+				YY_FATAL_ERROR( "input in flex scanner failed" ); \
+				break; \
+			} \
+\
 
+#endif
+#endif
 /* No semi-colon after return; correct usage is to write "yyterminate();" -
  * we don't want an extra ';' after the "return" because that will cause
  * some compilers to complain about unreachable statements.
@@ -1217,10 +1231,10 @@ YY_DECL
 			(yy_start) = 1;	/* first start state */
 
 		if ( ! yyin )
-			yyin = stdin;
+			yyin = TINY_STDIN;
 
 		if ( ! yyout )
-			yyout = stdout;
+			yyout = TINY_STDOUT;
 
 		if ( ! YY_CURRENT_BUFFER ) {
 			yyensure_buffer_stack ();
@@ -2161,8 +2175,9 @@ static void yy_load_buffer_state  (void)
     static void yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file )
 
 {
+	#ifdef SUPPORT_INTERACTIVE
 	int oerrno = errno;
-    
+    #endif
 	yy_flush_buffer( b );
 
 	b->yy_input_file = file;
@@ -2177,9 +2192,10 @@ static void yy_load_buffer_state  (void)
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
-    
+        b->yy_is_interactive = file ? (sql_tiny_isatty( sql_tiny_fileno(file) ) > 0) : 0;
+    #ifdef SUPPORT_INTERACTIVE
 	errno = oerrno;
+	#endif
 }
 
 /** Discard all buffered characters. On the next scan, YY_INPUT will be called.
