@@ -2910,12 +2910,23 @@ struct Node* makeNodeX(char* s, char *str[], int *index) {
     node->value = NULL;
 
     if(*index > 0 && s){
-      if(strcmp("IDENTIFIER", s) == 0 || strcmp("STRING", s) == 0 || strcmp("NUMBER", s) == 0){
+      if(strcmp("IDENTIFIER", s) == 0 || strcmp("NUMBER", s) == 0){
         *index = *index - 1;
         node->value = str[*index];    
+      }else if(strcmp("STRING", s) == 0 ){
+        *index = *index - 1;
+        char *p_t =  str[*index]; 
+        node->value = p_t;   
+        p_t = strstr(p_t, "\\'");
+        while(p_t){
+          int len = strlen(p_t);
+
+          memmove(p_t, &p_t[1], len);
+          p_t = strstr(p_t, "\\'");
+        }
       }
     }
-    SQL_TINY_PLATFORM_LOG("[makeNode] %s\n", s);
+    //SQL_TINY_PLATFORM_LOG("[makeNode] %s\n", s);
     return node;
 }
 
@@ -3046,7 +3057,9 @@ int main()
 {
 
   //sql_tiny_grammer_api_parse("INSERT INTO users (id, name, age) VALUES (1, 'John Doe', 25);");
-  sql_tiny_grammer_api_parse("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  //sql_tiny_grammer_api_parse("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Munchen';");
+  sql_tiny_grammer_api_parse("SELECT * FROM Customers WHERE Country='Germany' AND City='Berlin' OR City='Ren & Stimpy Show The\\' - Buckeroo$! (USA).nes';");
+  //sql_tiny_grammer_api_parse("SELECT * FROM Customers WHERE Country='Germany\\' \" sd';");
   sql_tiny_grammer_api_destroy();
 
   SQL_MEM_DBG();
