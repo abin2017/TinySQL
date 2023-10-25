@@ -3,6 +3,7 @@
         "parse.tab.h": "c",
         "sql_porting.h": "c",
         "errno.h": "c",
-        "sql_grammar_api.h": "c"
+        "sql_grammar_api.h": "c",
+        "type_traits": "c"
     }
 }
