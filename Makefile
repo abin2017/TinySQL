@@ -1,13 +1,15 @@
 CC = gcc
 AR = ar
 
-CFLAGS := -g -O0 -Wno-format-security -DSQL_GRAMMER_TEST
+CFLAGS := -g -O0 -m32 -Wno-format-security -DSQL_GRAMMER_TEST 
 DEFS := 
 LINKFLAGS :=
 
 OBJDIR :=
 OBJS := sql_porting.o \
-		parse.tab.o 
+		parse.tab.o \
+		tiny_db_pager.o \
+		tiny_db_module.o
 
 TARGET = parser
 

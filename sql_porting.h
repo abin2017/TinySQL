@@ -7,6 +7,9 @@
 #define SQL_TINY_PLATFORM_LOG printf
 //#define SQL_TINY_PLATFORM_INFO printf
 
+#define SQL_TINY_DB_ERR printf
+#define SQL_TINY_DB_DBG printf
+
 //#define SQL_TINY_PLATFORM_ERR(...) do{}while(0)
 //#define SQL_TINY_PLATFORM_LOG(...) do{}while(0)
 #define SQL_TINY_PLATFORM_INFO(...) do{}while(0)
@@ -48,5 +51,55 @@ int     sql_tiny_platform_ferror (FILE *__stream);
 int     sql_tiny_platform_isatty (int __fd);
 
 void *  sql_tiny_platform_mem_dbg (char *f, int line);
+
+
+
+typedef struct{
+    void **ppblock;
+    unsigned short *block_cnt;
+    unsigned short *current_cnt;
+    int block_size;
+
+    int enlarge_size;
+    void * block;
+}st_data_block_t;
+
+
+void * sql_tiny_db_malloc(unsigned int size);
+
+void * sql_tiny_db_realloc(void *p, unsigned int size);
+
+void * sql_tiny_db_calloc(unsigned int nmemb, unsigned int size);
+
+void sql_tiny_db_free(void * buf);
+
+int sql_tiny_db_insert_block(st_data_block_t *in);
+
+void sql_tiny_db_assert(int expression);
+
+int sql_tiny_db_OsFileDelete(const char* path);
+
+int sql_tiny_db_OsFileExists(const char* path);
+
+int sql_tiny_db_OsOpen(const char* path);
+
+int sql_tiny_db_OsClose(int OsFile);
+
+int sql_tiny_db_OsRead(int OsFile, void* buffer, int amt);
+
+int sql_tiny_db_OsWrite(int OsFile, const void* buffer, int amt);
+
+int sql_tiny_db_OsSeek(int OsFile, int offset);
+
+int sql_tiny_db_OsFileSize(int OsFile, int *pSize);
+
+int sql_tiny_db_OsLock(int lock_id);
+
+int sql_tiny_db_OsUnlock(int lock_id);
+
+int sql_tiny_db_OslockCreate(int *lock_id, int initial_value);
+
+int sql_tiny_db_OslockDelete(int lock_id);
+
 
 #endif

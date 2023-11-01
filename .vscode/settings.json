@@ -4,6 +4,10 @@
         "sql_porting.h": "c",
         "errno.h": "c",
         "sql_grammar_api.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "pthread.h": "c",
+        "tiny_db_priv.h": "c",
+        "stdio.h": "c",
+        "tiny_db_pager.h": "c"
     }
 }
