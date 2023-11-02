@@ -9,7 +9,8 @@ OBJDIR :=
 OBJS := sql_porting.o \
 		parse.tab.o \
 		tiny_db_pager.o \
-		tiny_db_module.o
+		tiny_db_module.o \
+		tiny_db_node.o 
 
 TARGET = parser
 

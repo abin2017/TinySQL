@@ -25,18 +25,18 @@
 
 #define MODULE_PAGE_OFFSET 4
 
-
+#if 0
 typedef struct{
     td_uint16 page_id; //保存page index
     void * p_handle;
 }td_mod_page_t;
-
+#endif
 typedef struct{
     td_uint16       module_id;
     td_uint16       first_page_id;
     td_uint16       page_count; // already saved page count
     td_uint16       pages_buffer_size; // number of pages buffer size
-    td_mod_page_t * p_pages; //保存page info
+    td_uint16 *     p_pages; //保存page info
 }td_mod_info_t;
 
 //想要使用模块先创建ID

@@ -68,7 +68,8 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
     td_uchar * p_buffer = NULL;
 
     st_data_block_t block = {NULL};
-    td_mod_page_t page = {TINY_INVALID_PAGE_ID};
+    //td_mod_page_t page = {TINY_INVALID_PAGE_ID};
+    td_uint16 page = TINY_INVALID_PAGE_ID;
     td_uchar s_buf[4] = {0};
 
     td_uint32 size = tiny_db_get_page_size(fd);
@@ -98,13 +99,14 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
                 offset = tiny_db_get_page_offset(fd, TINY_PAGE_INDEX_TABLE);
                 sql_tiny_db_OsSeek(fd, offset);
                 if(sql_tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
-                    page.p_handle = NULL;
-                    page.page_id = TINY_PAGE_INDEX_TABLE;
+                    //page.p_handle = NULL;
+                    //page.page_id = TINY_PAGE_INDEX_TABLE;
+                    page = TINY_PAGE_INDEX_TABLE;
                     
                     block.ppblock = (void **)&p_mod->p_pages;
                     block.current_cnt = (td_uint16 *)&p_mod->page_count;
                     block.block_cnt = (td_uint16 *)&p_mod->pages_buffer_size;
-                    block.block_size = sizeof(td_mod_page_t);
+                    block.block_size = sizeof(td_uint16);//sizeof(td_mod_page_t);
                     block.enlarge_size = 2;
                     block.block = (void *)&page;
 
@@ -151,23 +153,24 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
         return tiny_db_module_enlarge(fd, p_mod);
     }
 
-    page.p_handle = NULL;
-    page.page_id = p_mod->first_page_id;
+    //page.p_handle = NULL;
+    //page.page_id = p_mod->first_page_id;
+    page = p_mod->first_page_id;
 
     memset(&block, 0, sizeof(block));
 
     block.ppblock = (void **)&p_mod->p_pages;
     block.current_cnt = (td_uint16 *)&p_mod->page_count;
     block.block_cnt = (td_uint16 *)&p_mod->pages_buffer_size;
-    block.block_size = sizeof(td_mod_page_t);
+    block.block_size = sizeof(td_uint16);//sizeof(td_mod_page_t);
     block.enlarge_size = 8;
     block.block = (void *)&page;
 
     do{
-        offset = tiny_db_get_page_offset(fd, page.page_id);
+        offset = tiny_db_get_page_offset(fd, page);//.page_id);
         ret = sql_tiny_db_OsSeek(fd, offset);
         if(ret != TR_SUCCESS){
-            tiny_db_pager_free(fd, page.page_id);
+            tiny_db_pager_free(fd, page);//.page_id);
             break;
         }
 
@@ -190,12 +193,12 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
             }else{
                 break;
             }
-            page.page_id = page_id;
+            page/*.page_id*/ = page_id;
         }else{
             ret = TR_FAIL;
             break;
         }
-    }while(page.page_id != TINY_INVALID_PAGE_ID);
+    }while(page/*.page_id*/ != TINY_INVALID_PAGE_ID);
 
     return ret;
 }
@@ -208,7 +211,8 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
     td_uchar * p_buffer = NULL;
 
     st_data_block_t block = {NULL};
-    td_mod_page_t page = {TINY_INVALID_PAGE_ID};
+    //td_mod_page_t page = {TINY_INVALID_PAGE_ID};
+    td_uint16 page = TINY_INVALID_PAGE_ID;
     td_uchar s_buf[MODULE_PAGE_OFFSET] = {0};
 
     td_uint32 size = tiny_db_get_page_size(fd);
@@ -229,18 +233,18 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
         p_cursor = &p_buffer[2];
         TD_WORD_SERIALIZE(p_cursor, val); //设置当前module下一页
 
-        memset(&p_buffer[4], 0, size - 4);
+        memset(&p_buffer[4], 0xff, size - 4);
 
         offset = tiny_db_get_page_offset(fd, page_id);
         sql_tiny_db_OsSeek(fd, offset);
         if(sql_tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
-            page.p_handle = NULL;
-            page.page_id = page_id;
+            //page.p_handle = NULL;
+            page/*.page_id*/ = page_id;
             
             block.ppblock = (void **)&p_mod->p_pages;
             block.current_cnt = (td_uint16 *)&p_mod->page_count;
             block.block_cnt = (td_uint16 *)&p_mod->pages_buffer_size;
-            block.block_size = sizeof(td_mod_page_t);
+            block.block_size = sizeof(td_uint16);//td_mod_page_t);
             block.enlarge_size = 8;
             block.block = (void *)&page;
 
@@ -253,7 +257,8 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
                     td_int32 b_occupy = 0;
 
                     sql_tiny_db_assert(p_mod->page_count >= 2);
-                    prev_id = p_mod->p_pages[p_mod->page_count - 2].page_id;
+                    //prev_id = p_mod->p_pages[p_mod->page_count - 2].page_id;
+                    prev_id = p_mod->p_pages[p_mod->page_count - 2];
                     sql_tiny_db_assert(tiny_db_pager_is_occupy(fd, prev_id, &b_occupy) == TR_SUCCESS && b_occupy);
 
                     offset = tiny_db_get_page_offset(fd, prev_id);
@@ -300,7 +305,7 @@ td_int32 tiny_db_module_delete(td_int32 fd, td_mod_info_t *p_mod){
     int i = 0;
 
     for(i = 0; i < p_mod->page_count; i ++){
-        tiny_db_pager_free(fd, p_mod->p_pages[i].page_id);
+        tiny_db_pager_free(fd, p_mod->p_pages[i]);//.page_id);
     }
 
     if(p_mod->p_pages){
@@ -316,7 +321,7 @@ td_int32 tiny_db_module_map(td_int32 fd, td_mod_info_t *p_mod, td_int32 page_ind
     td_uint32 size = tiny_db_get_page_size(fd);
 
     sql_tiny_db_assert(page_index >= p_mod->page_count);
-    return tiny_db_get_page_offset(fd, p_mod->p_pages[page_index].page_id);
+    return tiny_db_get_page_offset(fd, p_mod->p_pages[page_index]);//.page_id);
 }
 
 

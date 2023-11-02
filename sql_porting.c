@@ -363,6 +363,9 @@ int sql_tiny_db_insert_block(st_data_block_t *in){
         void * p_new = sql_tiny_db_realloc(*in->ppblock, resize * in->block_size);
 
         if(p_new){
+            char *p_tmp = (char *)p_new;
+
+            memset(&p_tmp[*in->current_cnt * in->block_size], 0, in->enlarge_size * in->block_size);
             *in->ppblock = p_new;
             *in->block_cnt += resize;
         }else{

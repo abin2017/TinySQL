@@ -8,6 +8,7 @@
         "pthread.h": "c",
         "tiny_db_priv.h": "c",
         "stdio.h": "c",
-        "tiny_db_pager.h": "c"
+        "tiny_db_pager.h": "c",
+        "tiny_db_node.h": "c"
     }
 }

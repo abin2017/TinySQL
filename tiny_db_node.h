@@ -19,6 +19,11 @@
     FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 55 AA 55 AA
 */
 
+/*
+    | 4字节     |  156字节，每个Node4字节  |
+    | module管理|  描述一个page最大38个Node |
+    每个Node最小48个字节， 有效字节为46[前面两个字节为NEXT]
+*/
 
 #ifndef _TINY_DB_NODE
 #define _TINY_DB_NODE
@@ -31,20 +36,35 @@ typedef struct{
     td_uint32 rev : 4;
 }db_node_t;
 
-//可能多个node拼凑一个Record
-#define RECORD_STATE_FREE       0b11
-#define RECORD_STATE_START      0b10
-#define RECORD_STATE_UESD       0b00
+typedef struct{
+    td_uint32 node_id ;          // node id 一个递增值，中间可能会隔断，即中间node被删除了
+    td_uint32 node_pos ;   // 存的是node位置连续序号
+    list_head_t list;
+}used_node_t;
 
+typedef struct{
+    td_uchar        node_length;
+    td_uchar        node_cnt_in_1_page;
+    td_uint16       last_node_id;
 
-td_int32     tiny_db_node_init(td_int32 module_id);
+    td_uint16       free_node_count; // already saved node count
+    td_uint16       free_node_buffer_size; // number of nodes buffer size
+    td_uint16 *     p_free_nodes; //保存空闲列表，保存的是node位置连续序号，从0开始     序号/（一页 node 数目） = 在第几页（moudle中的数组下标）
+    
+    list_head_t     list_head;
+    td_uint16       used_count;
 
-td_int32 *   tiny_db_node_get_all(td_int32 module_id);
+    td_mod_info_t   module;
+}mod_node_t;
 
-td_int32     tiny_db_node_get_by_id(td_int32 module_id, td_char *buffer, td_int32 buffer_len);
+td_int32    tiny_db_node_init(td_int32 fd, mod_node_t *p_module);
 
+td_int32    tiny_db_node_deinit(td_int32 fd, mod_node_t *p_module);
 
-//make buffer
-//parse buffer
+td_int32    tiny_db_node_get_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id, td_char *buffer, td_int32 buffer_len);
+
+td_int32    tiny_db_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id);
+
+td_int32    tiny_db_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer, td_int32 buffer_len);
 
 #endif
