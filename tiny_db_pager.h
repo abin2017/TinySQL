@@ -6,7 +6,7 @@
     tage_START  0xAA55AA55
     tage_END    0x55AA55AA
 
-    最大管理 (2K - 8) * 32
+    最大管理 (2K - 8 - 16) * 32
 
     即每个数据库page0和1被占用
     */
@@ -19,6 +19,10 @@
     FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 55 AA 55 AA
 */
 
+/*
+    tage_START[4 bytes] [2024 bytes] [reserve 16 bytes] tage_END[0x55AA55AA]
+*/
+
 
 #ifndef _TINY_DB_PAGER
 #define _TINY_DB_PAGER
@@ -27,9 +31,17 @@
 #define TINY_PAGE_INDEX_TABLE   1
 
 #define TINY_INVALID_PAGE_ID 0xFFFF
+#define TINY_REV_BYTES_LEN 4
 
 #define TR_SUCCESS  0
 #define TR_FAIL     -1
+
+typedef enum{
+    TD_PAGER_REV_MODULE = 0,
+    TD_PAGER_REV_TBL_LAST_NODE = 1,
+
+    TD_PAGER_REV_END = 9
+}td_pager_rev_t;
 
 
 //用于数据库创建，用于重置所有page状态，打上TAG tage_START/tage_END
@@ -58,5 +70,11 @@ td_int32 tiny_db_pager_is_occupy(td_int32 fd, td_int32 index, td_int32 *b_occupy
 
 //强行占用指定页面
 td_int32 tiny_db_pager_occupy_page(td_int32 fd, td_int16 page_id);
+
+//获取pager管理页面保留区域，按照4字节获取
+td_int32 tiny_db_pager_get_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar * p_val);
+
+//设置pager管理页面保留区域，按照4字节获取
+td_int32 tiny_db_pager_set_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar *p_val);
 
 #endif

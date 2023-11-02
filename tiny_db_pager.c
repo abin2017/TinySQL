@@ -6,7 +6,7 @@
     tage_START  0xAA55AA55
     tage_END    0x55AA55AA
 
-    最大管理 (2K - 8) * 32
+    最大管理 (2K - 8 - 16) * 32
 
     即每个数据库page0和1被占用
     */
@@ -19,6 +19,10 @@
     FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 55 AA 55 AA
 */
 
+/*
+    tage_START[4 bytes] [2000 bytes] [reserve 40 bytes] tage_END[0x55AA55AA]
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,13 +32,15 @@
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 
-#define TINY_DB_PAGE_SIZE 2048
-#define TINY_DB_START_TAG 0xAA55AA55
-#define TINY_DB_END_TAG 0x55AA55AA
-#define TINY_DB_START_BYTE 4
+#define TINY_DB_PAGE_SIZE       2048
+#define TINY_DB_START_TAG       0xAA55AA55
+#define TINY_DB_END_TAG         0x55AA55AA
+#define TINY_DB_START_BYTE      4
+#define TINY_DB_VALID_BYTE      2000
+#define TINY_DB_RESERVE         (2000 + TINY_DB_START_BYTE)
 
 #define LINE_BYTE 20
-#define LINE_COUNT 102 //(TINY_DB_PAGE_SIZE - TINY_DB_START_BYTE * 2)/ LINE_BYTE
+#define LINE_COUNT 100 //(TINY_DB_PAGE_SIZE - TINY_DB_START_BYTE * 2)/ LINE_BYTE
 
 
 td_int32 tiny_db_pager_init(td_int32 fd){
@@ -73,6 +79,8 @@ td_int32 tiny_db_pager_init(td_int32 fd){
         }
 
         sql_tiny_db_free(p_buf);
+
+        tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, 0);
     }
 
     return ret;
@@ -119,7 +127,7 @@ td_int16 tiny_db_pager_malloc(td_int32 fd){
 
 
 td_int32 tiny_db_pager_free(td_int32 fd, td_int16 index){
-    int total = TINY_DB_PAGE_SIZE - TINY_DB_START_BYTE * 2;
+    int total = TINY_DB_VALID_BYTE;
     int byte_index = index / 8;
     int byte_off = index % 8;
     td_uchar mask = 0;
@@ -140,7 +148,7 @@ td_int32 tiny_db_pager_free(td_int32 fd, td_int16 index){
 
 
 td_int32 tiny_db_get_page_offset(td_int32 fd, td_int32 index){
-    if(index == 0 || (index / 8) >= (TINY_DB_PAGE_SIZE - TINY_DB_START_BYTE * 2)){
+    if(index == 0 || (index / 8) >= TINY_DB_VALID_BYTE){
         SQL_TINY_DB_ERR("page %d invalid\n", index);
         return TR_FAIL;
     }
@@ -154,7 +162,7 @@ td_int32 tiny_db_get_page_size(td_int32 fd){
 }
 
 td_int32 tiny_db_pager_is_occupy(td_int32 fd, td_int32 index, td_int32 *b_occupy){
-    int total = TINY_DB_PAGE_SIZE - TINY_DB_START_BYTE * 2;
+    int total = TINY_DB_VALID_BYTE;
     int byte_index = index / 8;
     int byte_off = index % 8;
     td_uchar mask = 0;
@@ -188,4 +196,23 @@ td_int32 tiny_db_pager_occupy_page(td_int32 fd, td_int16 page_id){
     sql_tiny_db_OsSeek(fd, offset);
  
     return sql_tiny_db_OsWrite(fd, (void *)&mask, 1) == 1 ? TR_SUCCESS : TR_FAIL;
+}
+
+
+td_int32 tiny_db_pager_get_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar * p_val){
+    td_int32 offset = TINY_DB_VALID_BYTE + TINY_DB_START_BYTE + rev_id * TINY_REV_BYTES_LEN;
+
+    sql_tiny_db_assert(sql_tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
+    sql_tiny_db_assert(sql_tiny_db_OsRead(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
+
+    return TR_SUCCESS;
+}
+
+td_int32 tiny_db_pager_set_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar *p_val){
+    td_int32 offset = TINY_DB_VALID_BYTE + TINY_DB_START_BYTE + rev_id * TINY_REV_BYTES_LEN;
+
+    sql_tiny_db_assert(sql_tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
+    sql_tiny_db_assert(sql_tiny_db_OsWrite(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
+
+    return TR_SUCCESS;
 }

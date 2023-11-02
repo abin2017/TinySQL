@@ -22,7 +22,7 @@
 #ifndef _TINY_DB_MODULE_
 #define _TINY_DB_MODULE_
 
-
+#define TABLE_INDEX_MODULE_ID 0 // 表索引模块ID是0，其他具体表从1开始
 #define MODULE_PAGE_OFFSET 4
 
 #if 0

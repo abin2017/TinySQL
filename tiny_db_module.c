@@ -29,16 +29,14 @@
 #include "tiny_db_pager.h"
 #include "tiny_db_module.h"
 
-#define TABLE_INDEX_MODULE_ID 0 // 表索引模块ID是0，其他具体表从1开始
 #define MODULE_ID_BYTES 2
 
 
 //想要使用模块先创建ID
 td_int32 tiny_db_module_require_id(td_int32 fd){
     td_int32 b_occupy = 0;
-    td_uint32 offset = 0;
-    td_uint16 module_id = 0;
-    td_uchar s_mod_id[MODULE_ID_BYTES] = {0};
+    td_int32 module_id = 0;
+    td_uchar s_mod_id[TINY_REV_BYTES_LEN] = {0};
 
     tiny_db_pager_is_occupy(fd, TINY_PAGE_INDEX_TABLE, &b_occupy);
 
@@ -47,22 +45,19 @@ td_int32 tiny_db_module_require_id(td_int32 fd){
         return TR_FAIL;
     }
 
-    offset = tiny_db_get_page_offset(fd, TINY_PAGE_INDEX_TABLE) + MODULE_PAGE_OFFSET;
-    sql_tiny_db_OsSeek(fd, offset);
-    sql_tiny_db_OsRead(fd, (void *)s_mod_id, MODULE_ID_BYTES);
-    sql_tiny_db_OsSeek(fd, offset);
-
-    module_id = TD_MAKE_WORD(s_mod_id);
+    tiny_db_pager_get_rev(fd, TD_PAGER_REV_MODULE, s_mod_id);
+    module_id = TD_MAKE_DWORD(s_mod_id);
     SQL_TINY_DB_DBG("new module id: %u\n", module_id);
     module_id ++;
-    TD_WORD_SERIALIZE(s_mod_id, module_id);
-    sql_tiny_db_OsWrite(fd, (void *)&module_id, MODULE_ID_BYTES);
+    TD_DWORD_SERIALIZE(s_mod_id, module_id);
+    tiny_db_pager_set_rev(fd, TD_PAGER_REV_MODULE, s_mod_id);
     return module_id - 1;
 }
 
 //初始化指定module，即将指定moduleID的page管理起来
 td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
     td_int32 ret = TR_FAIL, offset = 0;
+    td_int32 val32 = 0;
     td_uint16 val = 0, page_id = 0xFFFF;
     td_uchar *p_cursor = NULL;
     td_uchar * p_buffer = NULL;
@@ -90,11 +85,11 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
                 p_cursor = &p_buffer[2];
                 TD_WORD_SERIALIZE(p_cursor, val); //设置当前module下一页
 
-                val = p_mod->module_id + 1; //设置下个moduleID
-                p_cursor = &p_buffer[4];
-                TD_WORD_SERIALIZE(p_cursor, val);
+                val32 = p_mod->module_id + 1; //设置下个moduleID
+                TD_DWORD_SERIALIZE(s_buf, val32);
+                tiny_db_pager_set_rev(fd, TD_PAGER_REV_MODULE, s_buf);
 
-                memset(&p_buffer[6], 0xFF, size - 6);
+                memset(&p_buffer[4], 0xFF, size - 4);
 
                 offset = tiny_db_get_page_offset(fd, TINY_PAGE_INDEX_TABLE);
                 sql_tiny_db_OsSeek(fd, offset);
@@ -174,7 +169,7 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
             break;
         }
 
-        if(sql_tiny_db_OsRead(fd, (void *)s_buf, MODULE_ID_BYTES) != MODULE_PAGE_OFFSET){
+        if(sql_tiny_db_OsRead(fd, (void *)s_buf, MODULE_PAGE_OFFSET) != MODULE_PAGE_OFFSET){
             ret = TR_FAIL;
             break;
         }
@@ -195,6 +190,7 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
             }
             page/*.page_id*/ = page_id;
         }else{
+            SQL_TINY_DB_ERR("module id not match\n");
             ret = TR_FAIL;
             break;
         }
