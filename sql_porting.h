@@ -64,6 +64,7 @@ typedef struct{
     void * block;
 }st_data_block_t;
 
+char * sql_tiny_db_strdup_fix(char *str, unsigned int len);
 
 void * sql_tiny_db_malloc(unsigned int size);
 

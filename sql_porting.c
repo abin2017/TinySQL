@@ -215,6 +215,17 @@ int sql_tiny_platform_isatty (int __fd){
 
 static int malloc_count = 0;
 
+char * sql_tiny_db_strdup_fix(char *str, unsigned int len){
+    char *ptr = malloc(len + 1);
+    if (ptr != NULL) {
+        malloc_count++;
+    }
+
+    memcpy(ptr, str, len);
+    ptr[len] = '\0';
+    return ptr;
+}
+
 void * sql_tiny_db_malloc(unsigned int size){
     void *ptr = malloc(size);
     if (ptr != NULL) {
