@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "list.h"
-#include "ting_db_platform.h"
+#include "tiny_db_platform.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 #include "tiny_db_module.h"
@@ -53,28 +53,28 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     td_mod_info_t   *p_mod  = NULL;
     td_int32 offset = 0, index = 0;
 
-    sql_tiny_db_assert(tiny_db_node_get_by_pos(fd, p_table_mode, p_used, table_buffer, 512) == TR_SUCCESS);
+    tiny_db_assert(tiny_db_node_get_by_pos(fd, p_table_mode, p_used, table_buffer, 512) == TR_SUCCESS);
 
     p_tblm_serialize = (tbl_node_t *)table_buffer;
     p_tbit_serialize = (tbl_item_t *)((char *)table_buffer + sizeof(tbl_node_t));
 
     if(p_tblm_serialize->item_count == 0 || p_tblm_serialize->title_len == 0){
-        SQL_TINY_DB_ERR("table header err\n");
+        TINY_DB_ERR("table header err\n");
         return TR_FAIL;
     }
 
-    p_des = sql_tiny_db_malloc(sizeof(tbl_desc_t));
+    p_des = tiny_db_malloc(sizeof(tbl_desc_t));
     memset(p_des, 0, sizeof(tbl_desc_t));
 
     list_add_tail(&p_des->list, p_list_head);
 
     //解析表头信息
     offset = p_tblm_serialize->title_len;
-    p_des->title = sql_tiny_db_strdup_fix(&table_buffer[offset], p_tblm_serialize->title_len);
-    sql_tiny_db_assert(p_des->title != NULL);
+    p_des->title = tiny_db_strdup_fix(&table_buffer[offset], p_tblm_serialize->title_len);
+    tiny_db_assert(p_des->title != NULL);
 
     p_des->head_cnt = p_tblm_serialize->item_count;
-    p_des->p_head = sql_tiny_db_malloc(sizeof(tbl_head_t) * p_des->head_cnt);
+    p_des->p_head = tiny_db_malloc(sizeof(tbl_head_t) * p_des->head_cnt);
     memset(p_des->p_head, 0, sizeof(tbl_head_t) * p_des->head_cnt);
 
     p_mnod = &p_des->node;
@@ -85,7 +85,7 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     p_mod->module_id = p_tblm_serialize->module_id;
     p_mod->first_page_id = p_tblm_serialize->first_page_id;
 
-    sql_tiny_db_assert(tiny_db_node_init(fd, p_mnod) == TR_SUCCESS);
+    tiny_db_assert(tiny_db_node_init(fd, p_mnod) == TR_SUCCESS);
 
     //解析表项信息
     for(index = 0; index < p_des->head_cnt; index++){
@@ -94,10 +94,10 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
         p_header->idx = p_tbit_serialize->idx;
         p_header->attr_mask = p_tbit_serialize->attr_mask;
 
-        sql_tiny_db_assert(p_tbit_serialize->title_len == 0);
+        tiny_db_assert(p_tbit_serialize->title_len == 0);
         offset = p_tbit_serialize->title_off;
-        p_header->title = sql_tiny_db_strdup_fix(&table_buffer[offset], p_tbit_serialize->title_len);
-        sql_tiny_db_assert(p_header->title != NULL);
+        p_header->title = tiny_db_strdup_fix(&table_buffer[offset], p_tbit_serialize->title_len);
+        tiny_db_assert(p_header->title != NULL);
     }
 
     return TR_SUCCESS;
@@ -121,9 +121,9 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
 
     /*                          TABLE管理页面开始初始化                          */
     ret = tiny_db_pager_init(fd);
-    sql_tiny_db_assert(TR_SUCCESS == ret);
+    tiny_db_assert(TR_SUCCESS == ret);
 
-    p_node = sql_tiny_db_malloc(sizeof(mod_node_t));
+    p_node = tiny_db_malloc(sizeof(mod_node_t));
     memset(p_node, 0, sizeof(mod_node_t));
 
     //init table first page
@@ -135,7 +135,7 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
     p_node->last_node_id = TD_MAKE_DWORD(s_buf);
 
     ret = tiny_db_node_init(fd, p_node);
-    sql_tiny_db_assert(TR_SUCCESS == ret);
+    tiny_db_assert(TR_SUCCESS == ret);
 
     p_this->p_table = p_node;
     /*                          TABLE管理页面初始化完成                          */
@@ -148,7 +148,7 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
             p_rec = list_entry(p_head, used_node_t, list);
 
             if(NULL != p_rec){
-                sql_tiny_db_assert(_td_table_manage_parse(fd, p_node, p_rec, &p_this->list_head) == TR_SUCCESS);
+                tiny_db_assert(_td_table_manage_parse(fd, p_node, p_rec, &p_this->list_head) == TR_SUCCESS);
             }
         }
     }

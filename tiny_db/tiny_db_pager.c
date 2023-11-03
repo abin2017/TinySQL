@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "ting_db_platform.h"
+#include "tiny_db_platform.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 
@@ -48,19 +48,19 @@ td_int32 tiny_db_pager_init(td_int32 fd){
     td_int32    tag = 0;
     char *      p_buf = NULL;
 
-    sql_tiny_db_OsSeek(fd, 0);
-    sql_tiny_db_OsRead(fd, (void *)&tag, 4);
+    tiny_db_OsSeek(fd, 0);
+    tiny_db_OsRead(fd, (void *)&tag, 4);
 
     if(tag == TINY_DB_START_TAG){
-        sql_tiny_db_OsSeek(fd, TINY_DB_PAGE_SIZE - 4);
-        sql_tiny_db_OsRead(fd, (void *)&tag, 4);
+        tiny_db_OsSeek(fd, TINY_DB_PAGE_SIZE - 4);
+        tiny_db_OsRead(fd, (void *)&tag, 4);
 
         if(tag == TINY_DB_END_TAG){
             return TR_SUCCESS;
         }
     }
 
-    p_buf = sql_tiny_db_malloc(TINY_DB_PAGE_SIZE);
+    p_buf = tiny_db_malloc(TINY_DB_PAGE_SIZE);
 
     if(p_buf == NULL){
         memset(&p_buf[4], 0xFF, TINY_DB_PAGE_SIZE - 8);
@@ -72,13 +72,13 @@ td_int32 tiny_db_pager_init(td_int32 fd){
         
         TD_CLR_BIT(p_buf[TINY_DB_START_BYTE], 0);
 
-        sql_tiny_db_OsSeek(fd, 0);
+        tiny_db_OsSeek(fd, 0);
         
-        if(sql_tiny_db_OsWrite(fd, p_buf, TINY_DB_PAGE_SIZE) == TINY_DB_PAGE_SIZE){
+        if(tiny_db_OsWrite(fd, p_buf, TINY_DB_PAGE_SIZE) == TINY_DB_PAGE_SIZE){
             ret = TR_SUCCESS;
         }
 
-        sql_tiny_db_free(p_buf);
+        tiny_db_free(p_buf);
 
         tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, 0);
     }
@@ -92,9 +92,9 @@ td_int16 tiny_db_pager_malloc(td_int32 fd){
     td_uchar    full[LINE_BYTE] = {0};
     int         i = 0;
 
-    sql_tiny_db_OsSeek(fd, TINY_DB_START_BYTE);
+    tiny_db_OsSeek(fd, TINY_DB_START_BYTE);
     for(; i < LINE_COUNT; i ++){
-        if(LINE_BYTE != sql_tiny_db_OsRead(fd, (void *)line, LINE_BYTE)){
+        if(LINE_BYTE != tiny_db_OsRead(fd, (void *)line, LINE_BYTE)){
             return TINY_INVALID_PAGE_ID;
         }
 
@@ -113,8 +113,8 @@ td_int16 tiny_db_pager_malloc(td_int32 fd){
                             td_uint32 pos =  (i * LINE_BYTE) + j;
 
                             TD_CLR_BIT(line[j], x);
-                            sql_tiny_db_OsSeek(fd, TINY_DB_START_BYTE + pos);
-                            sql_tiny_db_OsWrite(fd, &line[j], 1);
+                            tiny_db_OsSeek(fd, TINY_DB_START_BYTE + pos);
+                            tiny_db_OsWrite(fd, &line[j], 1);
                             return pos * 8 + x;
                         }            
                     }
@@ -133,23 +133,23 @@ td_int32 tiny_db_pager_free(td_int32 fd, td_int16 index){
     td_uchar mask = 0;
 
     if(byte_index >= total){
-        SQL_TINY_DB_ERR("total %d, curn %d\n", total, byte_index);
+        TINY_DB_ERR("total %d, curn %d\n", total, byte_index);
         return TR_FAIL;
     }
 
-    sql_tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
-    sql_tiny_db_OsRead(fd, (void *)&mask, 1);
+    tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
+    tiny_db_OsRead(fd, (void *)&mask, 1);
 
     TD_SET_BIT(mask, byte_off);
-    sql_tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
+    tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
 
-    return sql_tiny_db_OsWrite(fd, (void *)&mask, 1) == 1 ? TR_SUCCESS : TR_FAIL;
+    return tiny_db_OsWrite(fd, (void *)&mask, 1) == 1 ? TR_SUCCESS : TR_FAIL;
 }
 
 
 td_int32 tiny_db_get_page_offset(td_int32 fd, td_int32 index){
     if(index == 0 || (index / 8) >= TINY_DB_VALID_BYTE){
-        SQL_TINY_DB_ERR("page %d invalid\n", index);
+        TINY_DB_ERR("page %d invalid\n", index);
         return TR_FAIL;
     }
 
@@ -168,12 +168,12 @@ td_int32 tiny_db_pager_is_occupy(td_int32 fd, td_int32 index, td_int32 *b_occupy
     td_uchar mask = 0;
 
     if(byte_index >= total){
-        SQL_TINY_DB_ERR("total %d, curn %d\n", total, byte_index);
+        TINY_DB_ERR("total %d, curn %d\n", total, byte_index);
         return TR_FAIL;
     }
 
-    sql_tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
-    sql_tiny_db_OsRead(fd, (void *)&mask, 1);
+    tiny_db_OsSeek(fd, TINY_DB_START_BYTE + byte_index);
+    tiny_db_OsRead(fd, (void *)&mask, 1);
 
     *b_occupy = TD_GET_BIT(mask, byte_off) == 0;
     
@@ -188,22 +188,22 @@ td_int32 tiny_db_pager_occupy_page(td_int32 fd, td_int16 page_id){
         return TR_FAIL;
     }
     offset = TINY_DB_START_BYTE + page_id/8 ;
-    sql_tiny_db_OsSeek(fd, offset);
-    sql_tiny_db_OsRead(fd, (void *)&mask, 1);
+    tiny_db_OsSeek(fd, offset);
+    tiny_db_OsRead(fd, (void *)&mask, 1);
 
     TD_CLR_BIT(mask, byte_off);
 
-    sql_tiny_db_OsSeek(fd, offset);
+    tiny_db_OsSeek(fd, offset);
  
-    return sql_tiny_db_OsWrite(fd, (void *)&mask, 1) == 1 ? TR_SUCCESS : TR_FAIL;
+    return tiny_db_OsWrite(fd, (void *)&mask, 1) == 1 ? TR_SUCCESS : TR_FAIL;
 }
 
 
 td_int32 tiny_db_pager_get_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar * p_val){
     td_int32 offset = TINY_DB_VALID_BYTE + TINY_DB_START_BYTE + rev_id * TINY_REV_BYTES_LEN;
 
-    sql_tiny_db_assert(sql_tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
-    sql_tiny_db_assert(sql_tiny_db_OsRead(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
+    tiny_db_assert(tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
+    tiny_db_assert(tiny_db_OsRead(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
 
     return TR_SUCCESS;
 }
@@ -211,8 +211,8 @@ td_int32 tiny_db_pager_get_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar * p_
 td_int32 tiny_db_pager_set_rev(td_int32 fd, td_pager_rev_t rev_id, td_uchar *p_val){
     td_int32 offset = TINY_DB_VALID_BYTE + TINY_DB_START_BYTE + rev_id * TINY_REV_BYTES_LEN;
 
-    sql_tiny_db_assert(sql_tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
-    sql_tiny_db_assert(sql_tiny_db_OsWrite(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
+    tiny_db_assert(tiny_db_OsSeek(fd, offset) == TR_SUCCESS);
+    tiny_db_assert(tiny_db_OsWrite(fd, (void *)p_val, TINY_REV_BYTES_LEN) == TINY_REV_BYTES_LEN);
 
     return TR_SUCCESS;
 }

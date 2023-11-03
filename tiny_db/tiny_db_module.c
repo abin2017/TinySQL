@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "ting_db_platform.h"
+#include "tiny_db_platform.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 #include "tiny_db_module.h"
@@ -41,13 +41,13 @@ td_int32 tiny_db_module_require_id(td_int32 fd){
     tiny_db_pager_is_occupy(fd, TINY_PAGE_INDEX_TABLE, &b_occupy);
 
     if(b_occupy == 0){
-        SQL_TINY_DB_ERR("table not init\n");
+        TINY_DB_ERR("table not init\n");
         return TR_FAIL;
     }
 
     tiny_db_pager_get_rev(fd, TD_PAGER_REV_MODULE, s_mod_id);
     module_id = TD_MAKE_DWORD(s_mod_id);
-    SQL_TINY_DB_DBG("new module id: %u\n", module_id);
+    TINY_DB_DBG("new module id: %u\n", module_id);
     module_id ++;
     TD_DWORD_SERIALIZE(s_mod_id, module_id);
     tiny_db_pager_set_rev(fd, TD_PAGER_REV_MODULE, s_mod_id);
@@ -75,7 +75,7 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
         tiny_db_pager_is_occupy(fd, TINY_PAGE_INDEX_TABLE, &b_occupy);
         p_mod->first_page_id = TINY_PAGE_INDEX_TABLE;
         if(b_occupy == 0){
-            p_buffer = sql_tiny_db_malloc(size);
+            p_buffer = tiny_db_malloc(size);
 
             if(p_buffer){
                 p_cursor = &p_buffer[0];
@@ -92,8 +92,8 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
                 memset(&p_buffer[4], 0xFF, size - 4);
 
                 offset = tiny_db_get_page_offset(fd, TINY_PAGE_INDEX_TABLE);
-                sql_tiny_db_OsSeek(fd, offset);
-                if(sql_tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
+                tiny_db_OsSeek(fd, offset);
+                if(tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
                     //page.p_handle = NULL;
                     //page.page_id = TINY_PAGE_INDEX_TABLE;
                     page = TINY_PAGE_INDEX_TABLE;
@@ -105,22 +105,22 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
                     block.enlarge_size = 2;
                     block.block = (void *)&page;
 
-                    ret = sql_tiny_db_insert_block(&block);
+                    ret = tiny_db_insert_block(&block);
 
                     if(ret == 0){
                         ret = tiny_db_pager_occupy_page(fd, TINY_PAGE_INDEX_TABLE);
                     }else{
-                        SQL_TINY_DB_ERR("no memory\n");
+                        TINY_DB_ERR("no memory\n");
                     }
                 }else{
-                    SQL_TINY_DB_ERR("table first page write fail\n");
+                    TINY_DB_ERR("table first page write fail\n");
                 }
                 
-                sql_tiny_db_free(p_buffer);
+                tiny_db_free(p_buffer);
 
                 return ret;
             }else{
-                SQL_TINY_DB_ERR("no memory\n");
+                TINY_DB_ERR("no memory\n");
                 return ret;
             }
         }
@@ -131,7 +131,7 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
         page_id = tiny_db_pager_malloc(fd);
 
         if(page_id == TINY_INVALID_PAGE_ID){
-            SQL_TINY_DB_ERR("no pages\n");
+            TINY_DB_ERR("no pages\n");
             return ret;
         }
 
@@ -163,13 +163,13 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
 
     do{
         offset = tiny_db_get_page_offset(fd, page);//.page_id);
-        ret = sql_tiny_db_OsSeek(fd, offset);
+        ret = tiny_db_OsSeek(fd, offset);
         if(ret != TR_SUCCESS){
             tiny_db_pager_free(fd, page);//.page_id);
             break;
         }
 
-        if(sql_tiny_db_OsRead(fd, (void *)s_buf, MODULE_PAGE_OFFSET) != MODULE_PAGE_OFFSET){
+        if(tiny_db_OsRead(fd, (void *)s_buf, MODULE_PAGE_OFFSET) != MODULE_PAGE_OFFSET){
             ret = TR_FAIL;
             break;
         }
@@ -181,16 +181,16 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
         page_id = TD_MAKE_WORD(p_cursor);
 
         if(val == p_mod->module_id){
-            ret = sql_tiny_db_insert_block(&block);
+            ret = tiny_db_insert_block(&block);
 
             if(ret != TR_SUCCESS){
-                SQL_TINY_DB_ERR("no memory\n");           
+                TINY_DB_ERR("no memory\n");           
             }else{
                 break;
             }
             page/*.page_id*/ = page_id;
         }else{
-            SQL_TINY_DB_ERR("module id not match\n");
+            TINY_DB_ERR("module id not match\n");
             ret = TR_FAIL;
             break;
         }
@@ -215,11 +215,11 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
     td_uint16 page_id = tiny_db_pager_malloc(fd), prev_id = 0;
 
     if(page_id == TINY_INVALID_PAGE_ID){
-        SQL_TINY_DB_ERR("no pages\n");
+        TINY_DB_ERR("no pages\n");
         return ret;
     }
 
-    p_buffer = sql_tiny_db_malloc(size);
+    p_buffer = tiny_db_malloc(size);
 
     if(p_buffer){
         p_cursor = &p_buffer[0];
@@ -232,8 +232,8 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
         memset(&p_buffer[4], 0xff, size - 4);
 
         offset = tiny_db_get_page_offset(fd, page_id);
-        sql_tiny_db_OsSeek(fd, offset);
-        if(sql_tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
+        tiny_db_OsSeek(fd, offset);
+        if(tiny_db_OsWrite(fd, (void *)p_buffer, size) == size){
             //page.p_handle = NULL;
             page/*.page_id*/ = page_id;
             
@@ -244,7 +244,7 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
             block.enlarge_size = 8;
             block.block = (void *)&page;
 
-            ret = sql_tiny_db_insert_block(&block);
+            ret = tiny_db_insert_block(&block);
 
             if(ret == 0){
                 if(p_mod->first_page_id == TINY_INVALID_PAGE_ID){
@@ -252,14 +252,14 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
                 }else{
                     td_int32 b_occupy = 0;
 
-                    sql_tiny_db_assert(p_mod->page_count >= 2);
+                    tiny_db_assert(p_mod->page_count >= 2);
                     //prev_id = p_mod->p_pages[p_mod->page_count - 2].page_id;
                     prev_id = p_mod->p_pages[p_mod->page_count - 2];
-                    sql_tiny_db_assert(tiny_db_pager_is_occupy(fd, prev_id, &b_occupy) == TR_SUCCESS && b_occupy);
+                    tiny_db_assert(tiny_db_pager_is_occupy(fd, prev_id, &b_occupy) == TR_SUCCESS && b_occupy);
 
                     offset = tiny_db_get_page_offset(fd, prev_id);
 
-                    sql_tiny_db_assert(sql_tiny_db_OsSeek(fd, offset) == TR_SUCCESS && sql_tiny_db_OsRead(fd, s_buf, MODULE_PAGE_OFFSET) == MODULE_PAGE_OFFSET);
+                    tiny_db_assert(tiny_db_OsSeek(fd, offset) == TR_SUCCESS && tiny_db_OsRead(fd, s_buf, MODULE_PAGE_OFFSET) == MODULE_PAGE_OFFSET);
 
                     p_cursor = &p_buffer[0];
                     val = TD_MAKE_WORD(p_cursor);
@@ -267,21 +267,21 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
                     p_cursor = &p_buffer[2];
                     prev_id = TD_MAKE_WORD(p_cursor);
 
-                    sql_tiny_db_assert(prev_id == TINY_INVALID_PAGE_ID && val == p_mod->module_id);
+                    tiny_db_assert(prev_id == TINY_INVALID_PAGE_ID && val == p_mod->module_id);
                     TD_WORD_SERIALIZE(p_cursor, page_id);
 
-                    sql_tiny_db_OsSeek(fd, offset);
-                    sql_tiny_db_OsWrite(fd, s_buf, MODULE_PAGE_OFFSET);
+                    tiny_db_OsSeek(fd, offset);
+                    tiny_db_OsWrite(fd, s_buf, MODULE_PAGE_OFFSET);
                 }
                 ret = TR_SUCCESS;
             }else{
-                SQL_TINY_DB_ERR("no memory\n");
+                TINY_DB_ERR("no memory\n");
             }
         }else{
-            SQL_TINY_DB_ERR("table first page write fail\n");
+            TINY_DB_ERR("table first page write fail\n");
         }
     }else{
-        SQL_TINY_DB_ERR("no memory\n");
+        TINY_DB_ERR("no memory\n");
     }
 
     if(ret != TR_SUCCESS){
@@ -289,7 +289,7 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
     }
 
     if(p_buffer){
-        sql_tiny_db_free(p_buffer);
+        tiny_db_free(p_buffer);
     }
 
     return ret;
@@ -305,7 +305,7 @@ td_int32 tiny_db_module_delete(td_int32 fd, td_mod_info_t *p_mod){
     }
 
     if(p_mod->p_pages){
-        sql_tiny_db_free(p_mod->p_pages);
+        tiny_db_free(p_mod->p_pages);
     }
 
     return TR_SUCCESS;
@@ -314,7 +314,7 @@ td_int32 tiny_db_module_delete(td_int32 fd, td_mod_info_t *p_mod){
 
 //module 的page index从0开始，返回真实的偏移, page index 指向的是module数据结构中p_pages的下标
 td_int32 tiny_db_module_map(td_int32 fd, td_mod_info_t *p_mod, td_int32 page_index){
-    sql_tiny_db_assert(page_index >= p_mod->page_count);
+    tiny_db_assert(page_index >= p_mod->page_count);
     return tiny_db_get_page_offset(fd, p_mod->p_pages[page_index]);//.page_id);
 }
 
