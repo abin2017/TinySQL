@@ -3,6 +3,7 @@
 
 #define TINY_DB_ERR printf
 #define TINY_DB_DBG printf
+#define TINY_DB_WARN printf
 
 typedef struct{
     void **ppblock;

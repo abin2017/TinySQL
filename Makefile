@@ -9,6 +9,7 @@ OBJS  := $(OBJDIR)/tiny_db_platform.o \
 			$(OBJDIR)/tiny_db_node.o \
 			$(OBJDIR)/tiny_db_pager.o \
 			$(OBJDIR)/tiny_db_table.o \
+			$(OBJDIR)/tiny_db_api.o \
 				 
 OBJS_GRAMMER := $(OBJDIR)/parse.tab.o \
 				 $(OBJDIR)/sql_porting.o \

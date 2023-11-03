@@ -46,7 +46,22 @@
 td_int32 tiny_db_pager_init(td_int32 fd){
     td_int32    ret = TR_FAIL;
     td_int32    tag = 0;
+    int         size = 0;
     char *      p_buf = NULL;
+
+    if(tiny_db_OsFileSize(fd, &size) != TR_SUCCESS){
+        return ret;
+    }
+
+    if(size == 0){
+        TINY_DB_DBG("new database\n");
+        goto _new_database;
+    }
+
+    if(size % TINY_DB_PAGE_SIZE != 0){
+        TINY_DB_WARN("database not pagesize align %d %d\n", size, TINY_DB_PAGE_SIZE);
+        goto _new_database;
+    }
 
     tiny_db_OsSeek(fd, 0);
     tiny_db_OsRead(fd, (void *)&tag, 4);
@@ -58,11 +73,14 @@ td_int32 tiny_db_pager_init(td_int32 fd){
         if(tag == TINY_DB_END_TAG){
             return TR_SUCCESS;
         }
+
+        TINY_DB_WARN("database broken\n");
     }
 
+    _new_database:
     p_buf = tiny_db_malloc(TINY_DB_PAGE_SIZE);
 
-    if(p_buf == NULL){
+    if(p_buf != NULL){
         memset(&p_buf[4], 0xFF, TINY_DB_PAGE_SIZE - 8);
         tag = TINY_DB_START_TAG;
         memcpy(&p_buf[0], &tag, 4);

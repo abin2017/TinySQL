@@ -121,7 +121,10 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
 
     /*                          TABLE管理页面开始初始化                          */
     ret = tiny_db_pager_init(fd);
-    tiny_db_assert(TR_SUCCESS == ret);
+    if(TR_SUCCESS != ret){
+        TINY_DB_ERR("database error\n");
+        return TR_FAIL;
+    }
 
     p_node = tiny_db_malloc(sizeof(mod_node_t));
     memset(p_node, 0, sizeof(mod_node_t));
@@ -155,4 +158,44 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
     /*                           TABLE用户表完成初始化                           */
 
     return ret;
+}
+
+td_int32 tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this){
+    if(NULL == p_this->p_table){
+        return TR_FAIL;
+    }
+
+    if(!list_empty(&p_this->list_head)){
+        list_head_t *   p_head = NULL;
+        list_head_t *   p_tmp  = NULL;
+        tbl_desc_t  *   p_rec = NULL;
+        int             i = 0;
+
+        list_for_each_safe(p_head, p_tmp, &p_this->list_head){
+            p_rec = list_entry(p_head, tbl_desc_t, list);
+
+            if(NULL == p_rec){
+                continue;
+            }
+
+            list_del(&p_rec->list);
+            tiny_db_free(p_rec->title);
+            for(i = 0; i < p_rec->head_cnt; i ++){
+                tiny_db_free(p_rec->p_head[i].title);
+            }
+            tiny_db_free(p_rec->p_head);
+            tiny_db_node_deinit(fd, &p_rec->node);
+            tiny_db_free(p_rec);
+        }
+    }
+
+    tiny_db_node_deinit(fd, p_this->p_table);
+
+    if(p_this->p_table){
+        tiny_db_free(p_this->p_table);
+    }
+
+    memset(p_this, 0, sizeof(tbl_manage_t));
+
+    return TR_SUCCESS;
 }

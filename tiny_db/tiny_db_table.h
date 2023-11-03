@@ -32,5 +32,6 @@ typedef struct{
 
 td_int32    tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this);
 
+td_int32    tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this);
 
 #endif
