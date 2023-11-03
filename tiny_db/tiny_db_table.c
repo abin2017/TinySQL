@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "list.h"
-#include "sql_porting.h"
+#include "ting_db_platform.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 #include "tiny_db_module.h"
@@ -110,9 +110,8 @@ static td_int32 _td_table_manage_serialize(, ){
 #endif
 
 td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
-    td_int32  ret = TR_FAIL, val = 0;
+    td_int32  ret = TR_FAIL;
 
-    tbl_desc_t      *   p_tbl       = NULL;
     mod_node_t      *   p_node      = NULL;
     td_mod_info_t   *   p_mod       = NULL;
     td_uchar            s_buf[TINY_REV_BYTES_LEN] = {0};

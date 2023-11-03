@@ -5,3 +5,6 @@ sql_parser/sql_parser
 obj
 *.o
 parser
+.config
+*.a
+output

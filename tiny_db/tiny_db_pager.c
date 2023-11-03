@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "sql_porting.h"
+#include "ting_db_platform.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 

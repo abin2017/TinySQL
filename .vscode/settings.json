@@ -10,6 +10,7 @@
         "stdio.h": "c",
         "tiny_db_pager.h": "c",
         "tiny_db_node.h": "c",
-        "tiny_db_table.h": "c"
+        "tiny_db_table.h": "c",
+        "ting_db_platform.h": "c"
     }
 }
