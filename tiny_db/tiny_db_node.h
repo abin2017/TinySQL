@@ -69,4 +69,6 @@ td_int32    tiny_db_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 n
 
 td_int32    tiny_db_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer, td_int32 buffer_len);
 
+td_int32    tiny_db_node_destroy(td_int32 fd, mod_node_t *p_module);
+
 #endif

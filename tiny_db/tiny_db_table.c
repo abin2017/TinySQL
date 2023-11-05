@@ -69,6 +69,8 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
 
     list_add_tail(&p_des->list, p_list_head);
 
+    p_des->node_id = p_used->node_id;
+
     //解析表头信息
     offset = p_tblm_serialize->title_len;
     p_des->title = tiny_db_strdup_fix(&table_buffer[offset], p_tblm_serialize->title_len);
@@ -102,6 +104,27 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     }
 
     return TR_SUCCESS;
+}
+
+static tbl_desc_t * _td_table_get_desinfo(td_int32 fd, tbl_manage_t *p_this, char *title){
+    
+    if(!list_empty(&p_this->list_head)){
+        list_head_t *   p_head = NULL;
+        list_head_t *   p_tmp  = NULL;
+        tbl_desc_t  *   p_rec = NULL;
+
+        list_for_each_safe(p_head, p_tmp, &p_this->list_head){
+            p_rec = list_entry(p_head, tbl_desc_t, list);
+
+            if(p_rec == NULL || strcmp(p_rec->title, title) != 0){
+                continue;
+            }
+
+            return p_rec;
+        }
+    }
+
+    return NULL;
 }
 
 #if 0
@@ -202,14 +225,20 @@ td_int32 tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this){
 }
 
 td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column){
-    td_int32        new_module_id = 0, length = 0, i = 0;
+    td_int32        new_module_id = 0, length = 0, i = 0, val = 0;
     tbl_node_t  *   p_node = NULL;
     tbl_item_t  *   p_item = NULL;
 
     tbl_desc_t  *   p_des  = NULL;
 
     td_uint16       esti_len = 0, already_has = 0;
+    td_uchar        s_buf[4] = {0};
     st_data_cpy_t   data;
+
+    if(_td_table_get_desinfo(fd, p_this, title) != NULL){
+        TINY_DB_ERR("table %s already exsit\n", title);
+        return TR_FAIL;
+    }
 
     length = sizeof(tbl_item_t) * p_column->count + sizeof(tbl_node_t);
     p_node = (tbl_node_t *)p_this->buffer;
@@ -306,6 +335,12 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
 
     p_node->first_page_id = p_des->node.module.first_page_id;
     TD_TRUE_JUMP(TR_SUCCESS != tiny_db_node_set(fd, p_this->p_table, p_this->buffer, data.buffer_used), _err, "table create write node fail\n");
+    val = p_this->p_table->last_node_id;
+
+    p_des->node_id = val;
+    TD_DWORD_SERIALIZE(s_buf, val);
+    tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, s_buf);
+    list_add_tail(&p_des->list, &p_this->list_head);
 
     return TR_SUCCESS;
 
@@ -330,5 +365,27 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
 }
 
 td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title){
-    return TR_FAIL;
+    td_int32        ret     = TR_FAIL;
+    tbl_desc_t  *   p_rec   = NULL;
+
+    p_rec = _td_table_get_desinfo(fd, p_this, title);
+
+    if(p_rec){
+        int i = 0;
+
+        list_del(&p_rec->list);
+        tiny_db_free(p_rec->title);
+        for(i = 0; i < p_rec->head_cnt; i ++){
+            tiny_db_free(p_rec->p_head[i].title);
+        }
+        tiny_db_free(p_rec->p_head);
+        tiny_db_node_destroy(fd, &p_rec->node);
+
+        tiny_db_assert(tiny_db_node_del_by_id(fd, p_this->p_table, p_rec->node_id) == TR_SUCCESS);
+        tiny_db_free(p_rec);
+        
+        ret = TR_SUCCESS;
+    }
+
+    return ret;
 }

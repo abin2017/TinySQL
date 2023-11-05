@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <assert.h>
 #include "tiny_db_platform.h"
 
@@ -218,4 +219,29 @@ int tiny_db_copy_block(st_data_cpy_t *in, char *src, int src_len){
     in->buffer_used += cpy_len;
 
     return cpy_len;
+}
+
+void tiny_db_printf(char *format, ...){
+    va_list args;
+
+    #if 0
+    if(file1 == NULL){
+        time_t now = time(NULL);
+        struct tm *t = localtime(&now);
+        char buf[100], out[128];
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
+        snprintf(out, sizeof(out), "test/out_log/%s_out.txt", buf);
+        file1 = fopen(out, "a");
+    }
+    #endif
+    va_start(args, format);
+    int written = vfprintf(stdout, format, args);
+    //vfprintf(file1, format, args);
+    //fflush(file1);
+    va_end(args);
+
+    if (written < 0) {
+        fprintf(stderr, "An error occurred in custom_printf\n");
+        return;
+    }
 }

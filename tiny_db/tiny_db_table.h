@@ -13,8 +13,9 @@ typedef struct{
 }tbl_head_t;
 
 typedef struct{
-    td_uint32       head_cnt : 8;
-    td_uint32       rev : 24;
+    td_uchar        head_cnt;
+    td_uchar        rev;
+    td_uint16       node_id;
     tbl_head_t  *   p_head;
     td_char     *   title;
     mod_node_t      node;

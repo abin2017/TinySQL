@@ -1,10 +1,19 @@
 #ifndef __X_TINY_PORTING_H__
 #define __X_TINY_PORTING_H__
 
-#define TINY_DB_ERR printf
-#define TINY_DB_DBG printf
-#define TINY_DB_WARN printf
-#define TINY_LOG_JUMP printf
+#ifndef WIN32
+#define TINY_DB_ERR(format,...)     tiny_db_printf("\e[1;31m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_DBG(format,...)     tiny_db_printf("\e[1;37m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_WARN(format,...)    tiny_db_printf("\e[1;33m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_INFO(format,...)    tiny_db_printf("\e[1;35m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#else
+#define TINY_DB_ERR(format,...)     tiny_db_printf("[%s] line %d "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_DBG(format,...)     tiny_db_printf("[%s] line %d "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_WARN(format,...)    tiny_db_printf("[%s] line %d "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define TINY_DB_INFO(format,...)    tiny_db_printf("[%s] line %d "format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#endif
+
+#define TINY_LOG_JUMP tiny_db_printf
 
 typedef struct{
     void **ppblock;
@@ -21,6 +30,8 @@ typedef struct{
     unsigned short buffer_used;
     char *buffer;
 }st_data_cpy_t;
+
+void tiny_db_printf(char *format, ...);
 
 char * tiny_db_strdup_fix(char *str, unsigned int len);
 

@@ -351,7 +351,7 @@ td_int32    tiny_db_node_deinit(td_int32 fd, mod_node_t *p_module){
         tiny_db_free(p_module->p_free_nodes);
     }
 
-    tiny_db_module_delete(fd, &p_module->module);
+    tiny_db_module_deinit(fd, &p_module->module);
 
     return TR_SUCCESS;
 }
@@ -471,4 +471,29 @@ td_int32    tiny_db_node_update(td_int32 fd, mod_node_t *p_module, td_int16 node
     }
     TINY_DB_ERR("can't find node %d\n", node_id);
     return TR_FAIL;
+}
+
+td_int32    tiny_db_node_destroy(td_int32 fd, mod_node_t *p_module){
+    list_head_t *p_head = NULL;
+    list_head_t *p_tmp  = NULL;
+    used_node_t *p_node = NULL;
+
+    if(!list_empty(&p_module->list_head)){
+        list_for_each_safe(p_head,p_tmp,&p_module->list_head){
+            p_node = list_entry(p_head, used_node_t, list);
+
+            if(NULL != p_node){
+                list_del(&p_node->list);
+                tiny_db_free(p_node);
+            }
+        }
+    }
+
+    if(p_module->p_free_nodes){
+        tiny_db_free(p_module->p_free_nodes);
+    }
+
+    tiny_db_module_delete(fd, &p_module->module);
+
+    return TR_SUCCESS;
 }

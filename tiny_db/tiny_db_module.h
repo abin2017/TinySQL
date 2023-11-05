@@ -33,8 +33,8 @@ typedef struct{
 #endif
 typedef struct{
     td_uint16       module_id;
-    td_uint16       first_page_id;
     td_uint16       page_count; // already saved page count
+    td_uint16       first_page_id;
     td_uint16       pages_buffer_size; // number of pages buffer size
     td_uint16 *     p_pages; //保存page info
 }td_mod_info_t;
@@ -56,5 +56,8 @@ td_int32 tiny_db_module_map(td_int32 fd, td_mod_info_t *p_mod, td_int32 page_ind
 
 //指定module，获取总共空间
 td_int32 tiny_db_module_size(td_int32 fd, td_mod_info_t *p_mod);
+
+//释放module数据结构
+td_int32 tiny_db_module_deinit(td_int32 fd, td_mod_info_t *p_mod);
 
 #endif

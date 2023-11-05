@@ -325,3 +325,12 @@ td_int32 tiny_db_module_size(td_int32 fd, td_mod_info_t *p_mod){
 
     return size * p_mod->page_count;
 }
+
+//释放module数据结构
+td_int32 tiny_db_module_deinit(td_int32 fd, td_mod_info_t *p_mod){
+    if(p_mod->p_pages){
+        tiny_db_free(p_mod->p_pages);
+    }
+
+    return TR_SUCCESS;
+}

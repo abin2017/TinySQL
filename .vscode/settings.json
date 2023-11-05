@@ -13,6 +13,7 @@
         "tiny_db_table.h": "c",
         "tiny_db_platform.h": "c",
         "list.h": "c",
-        "tiny_db_api.h": "c"
+        "tiny_db_api.h": "c",
+        "tiny_db_module.h": "c"
     }
 }
