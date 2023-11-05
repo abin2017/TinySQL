@@ -15,33 +15,23 @@
 #include "tiny_db_module.h"
 #include "tiny_db_node.h"
 #include "tiny_db_table.h"
-
+#include "tiny_db_api.h"
 
 typedef struct{
     int                 fd;
     tbl_manage_t        entrance;
 }tiny_db_t;
 
-int tiny_db_open(char *path){
+int tiny_db_api_open(char *path){
     tiny_db_t *p_this = NULL;
 
     p_this = tiny_db_malloc(sizeof(tiny_db_t));
-    if(p_this == NULL){
-        TINY_DB_ERR("no memory\n");
-        return 0;
-    }
+    TD_TRUE_RETVAL(p_this == NULL, 0, "no memory\n");
     memset(p_this, 0, sizeof(tiny_db_t));
 
     p_this->fd = tiny_db_OsOpen(path);
-    if(p_this->fd == 0){
-        TINY_DB_ERR("%s open fail\n", path);
-        goto _err;
-    }
-
-    if(TR_SUCCESS != tiny_db_table_init(p_this->fd, &p_this->entrance)){
-        TINY_DB_ERR("%s open fail\n", path);
-        goto _err;
-    }
+    TD_TRUE_JUMP(p_this->fd == 0, _err, "%s open fail\n", path);
+    TD_TRUE_JUMP(TR_SUCCESS != tiny_db_table_init(p_this->fd, &p_this->entrance), _err, "%s open fail\n", path);
 
     return (int)p_this;
     _err:
@@ -54,7 +44,7 @@ int tiny_db_open(char *path){
         return 0;
 }
 
-void tiny_db_close(int handle){
+void tiny_db_api_close(int handle){
     tiny_db_t *p_this = NULL;
 
     p_this = (tiny_db_t *)handle;
@@ -68,4 +58,35 @@ void tiny_db_close(int handle){
 
         tiny_db_free(p_this);
     }
+}
+
+int tiny_db_api_create_table(int handle, char *title, td_elem_list_t *p_column, int param){
+    int ret = TD_FAIL, i = 0;
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title || NULL == p_column || handle == 0, ret, "title %p, column %p, %x\n", title, p_column, handle);
+    TD_TRUE_RETVAL(p_column->count == 0, ret, "column count %d\n", p_column->count);
+
+    for(i = 0; i < p_column->count; i++){
+        td_elem_t *p_elem = &p_column->p_elem[i];
+
+        TD_TRUE_RETVAL(NULL == p_elem->p_tag, ret, "column[%d] tag is null\n", i);
+    }
+
+    return tiny_db_table_create(p_this->fd, &p_this->entrance, title, p_column);
+}
+
+int tiny_db_api_delete_table(int handle, char *title, int param){
+    int ret = TD_FAIL;
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title, ret, "title %p\n", title);
+
+    return tiny_db_table_destroy(p_this->fd, &p_this->entrance, title);   
+}
+
+int tiny_db_api_edit_table(int handle, char *title, td_elem_list_t *p_column, int param){
+
+    TINY_DB_ERR("Not support edit\n");
+    return TD_FAIL;   
 }

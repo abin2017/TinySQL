@@ -4,6 +4,7 @@
 #define TINY_DB_ERR printf
 #define TINY_DB_DBG printf
 #define TINY_DB_WARN printf
+#define TINY_LOG_JUMP printf
 
 typedef struct{
     void **ppblock;
@@ -15,7 +16,15 @@ typedef struct{
     void * block;
 }st_data_block_t;
 
+typedef struct{
+    unsigned short buffer_length;
+    unsigned short buffer_used;
+    char *buffer;
+}st_data_cpy_t;
+
 char * tiny_db_strdup_fix(char *str, unsigned int len);
+
+char * tiny_db_strdup(char *str);
 
 void * tiny_db_malloc(unsigned int size);
 
@@ -26,6 +35,8 @@ void * tiny_db_calloc(unsigned int nmemb, unsigned int size);
 void tiny_db_free(void * buf);
 
 int tiny_db_insert_block(st_data_block_t *in);
+
+int tiny_db_copy_block(st_data_cpy_t *in, char *src, int src_len);
 
 void tiny_db_assert(int expression);
 

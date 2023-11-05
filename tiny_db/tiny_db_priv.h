@@ -27,4 +27,9 @@
 
 #define TD_WORD_SERIALIZE(serial, word)     { serial[0] = word & 0xFF; serial[1] = (word >> 8) & 0xFF;}
 #define TD_DWORD_SERIALIZE(serial, dword)   { serial[0] = dword & 0xFF; serial[1] = (dword >> 8) & 0xFF; serial[2] = (dword >> 16) & 0xFF; serial[3] = (dword >> 24) & 0xFF;}
+
+#define TD_TRUE_JUMP(condition, tag, format, ...) if(condition){TINY_LOG_JUMP("\e[1;32m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__); goto tag;}
+#define TD_TRUE_RETVAL(condition, val, format, ...) if(condition){TINY_LOG_JUMP("\e[1;32m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__); return val;}
+#define TD_TRUE_RETVOD(condition, val, format, ...) if(condition){TINY_LOG_JUMP("\e[1;32m[%s] line %d "format"\033[0m", __FUNCTION__, __LINE__, ##__VA_ARGS__); return ;}
+
 #endif

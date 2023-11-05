@@ -23,6 +23,7 @@ typedef struct{
 
 typedef struct{
     mod_node_t  *   p_table;
+    td_char     *   buffer;
     list_head_t     list_head;
 }tbl_manage_t;
 
@@ -33,5 +34,9 @@ typedef struct{
 td_int32    tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this);
 
 td_int32    tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this);
+
+td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column);
+
+td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title);
 
 #endif

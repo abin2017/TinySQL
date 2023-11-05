@@ -8,6 +8,7 @@
 
 #include "list.h"
 #include "tiny_db_platform.h"
+#include "tiny_db_api.h"
 #include "tiny_db_priv.h"
 #include "tiny_db_pager.h"
 #include "tiny_db_module.h"
@@ -21,8 +22,11 @@
 
 #define TABLE_ATTR_MASK_IS_INT      (1 << 0)  //1 is int; 0 is string
 #define TABLE_ATTR_MASK_LN_NODEID   (1 << 1)  //1 take node id; 0 do nothing
+#define TABLE_ATTR_MASK_FIX_LEN     (1 << 2)  //1 string fix length; 0 dynamic
 
 #define TABLE_MANAGE_NODE_LEN 0x80
+
+#define MAX_BUFFER_LEN 1884
 
 typedef struct{
     td_uchar idx;
@@ -58,10 +62,7 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     p_tblm_serialize = (tbl_node_t *)table_buffer;
     p_tbit_serialize = (tbl_item_t *)((char *)table_buffer + sizeof(tbl_node_t));
 
-    if(p_tblm_serialize->item_count == 0 || p_tblm_serialize->title_len == 0){
-        TINY_DB_ERR("table header err\n");
-        return TR_FAIL;
-    }
+    TD_TRUE_RETVAL(p_tblm_serialize->item_count == 0 || p_tblm_serialize->title_len == 0, TR_FAIL, "table header err\n");
 
     p_des = tiny_db_malloc(sizeof(tbl_desc_t));
     memset(p_des, 0, sizeof(tbl_desc_t));
@@ -121,13 +122,13 @@ td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
 
     /*                          TABLE管理页面开始初始化                          */
     ret = tiny_db_pager_init(fd);
-    if(TR_SUCCESS != ret){
-        TINY_DB_ERR("database error\n");
-        return TR_FAIL;
-    }
+    TD_TRUE_RETVAL(TR_SUCCESS != ret, TR_FAIL, "database error\n");
 
     p_node = tiny_db_malloc(sizeof(mod_node_t));
     memset(p_node, 0, sizeof(mod_node_t));
+
+    p_this->buffer = tiny_db_malloc(MAX_BUFFER_LEN);
+    p_this->buffer[0] = 0;
 
     //init table first page
     p_mod = &p_node->module;
@@ -198,4 +199,136 @@ td_int32 tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this){
     memset(p_this, 0, sizeof(tbl_manage_t));
 
     return TR_SUCCESS;
+}
+
+td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column){
+    td_int32        new_module_id = 0, length = 0, i = 0;
+    tbl_node_t  *   p_node = NULL;
+    tbl_item_t  *   p_item = NULL;
+
+    tbl_desc_t  *   p_des  = NULL;
+
+    td_uint16       esti_len = 0, already_has = 0;
+    st_data_cpy_t   data;
+
+    length = sizeof(tbl_item_t) * p_column->count + sizeof(tbl_node_t);
+    p_node = (tbl_node_t *)p_this->buffer;
+    p_item = (tbl_item_t *)(p_this->buffer + sizeof(tbl_node_t));
+
+    memset(p_this->buffer, 0, length);
+    memset(&data, 0, sizeof(st_data_cpy_t));
+
+    data.buffer = p_this->buffer;
+    data.buffer_length = MAX_BUFFER_LEN;
+    data.buffer_used = length;
+
+    new_module_id = tiny_db_module_require_id(fd);
+
+    p_node->module_id = new_module_id;
+    //p_node->first_page_id
+    p_node->last_node_id = 0;
+    p_node->item_count = p_column->count;
+    p_node->title_len = strlen(title);
+    p_node->title_off = length;
+
+    length = strlen(title);
+    TD_TRUE_RETVAL(tiny_db_copy_block(&data, title, length) != length, TR_FAIL, "copy length fail %d, %s\n", data.buffer_used, title);
+
+    p_des = tiny_db_malloc(sizeof(tbl_desc_t));
+    TD_TRUE_RETVAL(NULL == p_des, TR_FAIL, "no memory\n");
+    memset(p_des, 0, sizeof(tbl_desc_t));
+
+    p_des->title = tiny_db_strdup(title);
+    TD_TRUE_JUMP(NULL == p_des->title, _err, "no memory\n");
+
+    p_des->p_head = tiny_db_malloc(sizeof(tbl_head_t) * p_column->count);
+    TD_TRUE_JUMP(NULL == p_des->p_head, _err, "no memory\n");
+    memset(p_des->p_head, 0, sizeof(tbl_head_t) * p_column->count);
+    p_des->head_cnt = p_column->count;
+
+    for(i = 0; i < p_column->count; i ++){
+        td_elem_t * p_elem = &p_column->p_elem[i];
+
+        p_item[i].idx = i;
+        p_item[i].title_off = data.buffer_used;
+        p_item[i].title_len = strlen(p_elem->p_tag);
+
+        TD_TRUE_JUMP(tiny_db_copy_block(&data, p_elem->p_tag, p_item[i].title_len) != p_item[i].title_len, _err, "copy length fail %d, %s\n", data.buffer_used, p_elem->p_tag);
+
+        switch(p_elem->type){
+            case TD_ELEM_TYPE_STRING:
+                esti_len += 20;
+                p_item[i].attr_mask = 0b11111000;
+                break;
+
+            case TD_ELEM_TYPE_STRING_FIXED:
+                esti_len += (1 + 2 + *(int *)p_elem->content);
+                p_item[i].attr_mask = 0b11111100;
+                break;
+            
+            case TD_ELEM_TYPE_INTEGER:
+                esti_len += 5;
+                p_item[i].attr_mask = 0b11111101;
+                break;
+            
+            case TD_ELEM_TYPE_AUTO_INCREASE:
+                if(already_has){
+                    TINY_DB_ERR("already set auto\n");
+                    goto _err;
+                }else{
+                    already_has = 1;
+                    p_item[i].attr_mask = 0b11111111;
+                }
+                break;
+
+                default:
+                    TINY_DB_ERR("unknow type %d\n", p_elem->type);
+                    goto _err;
+        }
+
+        p_des->p_head[i].attr_mask = p_item[i].attr_mask;
+        p_des->p_head[i].idx = p_item[i].idx;
+        p_des->p_head[i].title = tiny_db_strdup(p_elem->p_tag);
+        TD_TRUE_JUMP(NULL == p_des->p_head[i].title, _err, "strdup %s fail\n", p_elem->p_tag);
+    }
+
+    p_node->node_len = esti_len;
+    if(esti_len >= 255){
+        p_node->node_len = 255;
+    }
+
+    p_des->node.last_node_id = p_node->last_node_id;
+    p_des->node.node_length = p_node->node_len;
+    p_des->node.module.module_id = new_module_id;
+    p_des->node.module.first_page_id = TINY_INVALID_PAGE_ID;
+
+    TD_TRUE_JUMP(TR_SUCCESS != tiny_db_node_init(fd, &p_des->node), _err, "node init error\n");
+
+    p_node->first_page_id = p_des->node.module.first_page_id;
+    TD_TRUE_JUMP(TR_SUCCESS != tiny_db_node_set(fd, p_this->p_table, p_this->buffer, data.buffer_used), _err, "table create write node fail\n");
+
+    return TR_SUCCESS;
+
+    _err:
+        if(p_des){
+            if(p_des->p_head){
+                for(i = 0; i < p_column->count; i ++){
+                    if(p_des->p_head[i].title){
+                        tiny_db_free(p_des->p_head[i].title);
+                    }
+                }
+                tiny_db_free(p_des->p_head);
+            }
+
+            if(p_des->title){
+                tiny_db_free(p_des->title);
+            }
+
+            tiny_db_free(p_des);
+        }
+        return TR_FAIL;
+}
+
+td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title){
+    return TR_FAIL;
 }

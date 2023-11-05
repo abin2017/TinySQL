@@ -23,6 +23,17 @@ char * tiny_db_strdup_fix(char *str, unsigned int len){
     return ptr;
 }
 
+char * tiny_db_strdup(char *str){
+    char *ptr = malloc(strlen(str) + 1);
+    if (ptr != NULL) {
+        malloc_count++;
+    }
+
+    strcpy(ptr, str);
+    return ptr;
+}
+
+
 void * tiny_db_malloc(unsigned int size){
     void *ptr = malloc(size);
     if (ptr != NULL) {
@@ -192,4 +203,19 @@ int tiny_db_insert_block(st_data_block_t *in){
 
 void    tiny_db_assert(int expression){
     assert(expression);
+}
+
+int tiny_db_copy_block(st_data_cpy_t *in, char *src, int src_len){
+    int left = in->buffer_length - in->buffer_used;
+    int cpy_len = left > src_len ? src_len : left;
+
+    if(left == 0 || src_len == 0){
+        TINY_DB_WARN("src len %d, left len %d\n", src_len, left);
+        return 0;
+    }
+
+    memcpy(&in->buffer[in->buffer_used], src, cpy_len);
+    in->buffer_used += cpy_len;
+
+    return cpy_len;
 }
