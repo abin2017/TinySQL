@@ -9,7 +9,13 @@ typedef struct{
     td_uchar    idx;
     td_uchar    attr_mask;
     td_uint16   fix_length;
-    td_char *   title;
+    union{
+        td_char *   title;
+        struct {
+            td_uint16   offset;
+            td_uint16   length;
+        }buf_item;
+    };
 }tbl_head_t;
 
 typedef struct{
@@ -17,6 +23,7 @@ typedef struct{
     td_uchar        rev;
     td_uint16       node_id;
     tbl_head_t  *   p_head;
+    tbl_head_t  *   p_head_proc;
     td_char     *   title;
     mod_node_t      node;
     list_head_t     list;
@@ -41,5 +48,7 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
 td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title);
 
 td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_t *p_elements, int count);
+
+td_int32    tiny_db_table_update(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column, td_condition_t *p_cond);
 
 #endif

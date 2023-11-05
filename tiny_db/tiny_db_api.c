@@ -84,18 +84,26 @@ int tiny_db_api_delete_table(int handle, char *title, int param){
     return tiny_db_table_destroy(p_this->fd, &p_this->entrance, title);   
 }
 
-int tiny_db_api_insert_data(int handle, char *title, td_elem_t *p_elements, int count, int param){
-    tiny_db_t *p_this = (tiny_db_t *)handle;
-
-    TD_TRUE_RETVAL(NULL == title, TD_FAIL, "title %p\n", title);
-    TD_TRUE_RETVAL(NULL == p_elements || count <= 0, TD_FAIL, "param error\n");
-
-    return tiny_db_table_insert(p_this->fd, &p_this->entrance, title, p_elements, count);
-}
-
-
 int tiny_db_api_edit_table(int handle, char *title, td_elem_list_t *p_column, int param){
 
     TINY_DB_ERR("Not support edit\n");
     return TD_FAIL;   
+}
+
+int tiny_db_api_insert_data(int handle, char *title, td_elem_list_t *p_elements, int param){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title, TD_FAIL, "title %p\n", title);
+    TD_TRUE_RETVAL(NULL == p_elements || NULL == p_elements->p_elem, TD_FAIL, "param error\n");
+
+    return tiny_db_table_insert(p_this->fd, &p_this->entrance, title, p_elements->p_elem, p_elements->count);
+}
+
+int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements, td_condition_t *p_cond, int param){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title, TD_FAIL, "title %p\n", title);
+    TD_TRUE_RETVAL(NULL == p_elements || NULL == p_elements->p_elem, TD_FAIL, "param error\n");
+
+    return tiny_db_table_update(p_this->fd, &p_this->entrance, title, p_elements, p_cond);
 }

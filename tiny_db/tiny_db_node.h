@@ -61,14 +61,18 @@ td_int32    tiny_db_node_init(td_int32 fd, mod_node_t *p_module);
 
 td_int32    tiny_db_node_deinit(td_int32 fd, mod_node_t *p_module);
 
-td_int32    tiny_db_node_get_by_pos(td_int32 fd, mod_node_t *p_module, used_node_t *p_rec, td_char *buffer, td_int32 buffer_len);
+td_int32    tiny_db_node_get_by_pos(td_int32 fd, mod_node_t *p_module, used_node_t *p_rec, td_char *buffer, td_int32 *buffer_len);
 
-td_int32    tiny_db_node_get_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id, td_char *buffer, td_int32 buffer_len);
+td_int32    tiny_db_node_get_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id, td_char *buffer, td_int32 *buffer_len);
 
 td_int32    tiny_db_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id);
 
 td_int32    tiny_db_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer, td_int32 buffer_len);
 
 td_int32    tiny_db_node_destroy(td_int32 fd, mod_node_t *p_module);
+
+td_int32    tiny_db_node_update_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id, td_char *buffer, td_int32 buffer_len);
+
+td_int32    tiny_db_node_update_by_pos(td_int32 fd, mod_node_t *p_module, used_node_t *p_node, td_char *buffer, td_int32 buffer_len);
 
 #endif
