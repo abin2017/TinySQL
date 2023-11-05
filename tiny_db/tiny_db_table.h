@@ -8,7 +8,7 @@
 typedef struct{
     td_uchar    idx;
     td_uchar    attr_mask;
-    td_uint16   rev;
+    td_uint16   fix_length;
     td_char *   title;
 }tbl_head_t;
 
@@ -39,5 +39,7 @@ td_int32    tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this);
 td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column);
 
 td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title);
+
+td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_t *p_elements, int count);
 
 #endif

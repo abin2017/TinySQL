@@ -27,12 +27,15 @@
 #define TABLE_MANAGE_NODE_LEN 0x80
 
 #define MAX_BUFFER_LEN 1884
+#define MAX_STRING_FIX_LEN 64
 
 typedef struct{
     td_uchar idx;
     td_uchar attr_mask;
     td_uint16 title_len : 6;
     td_uint16 title_off : 10;
+    td_uint32 fix_length : 16;
+    td_uint32 rev : 16;
 }tbl_item_t;
 
 typedef struct{
@@ -46,6 +49,50 @@ typedef struct{
     td_uint32 rev : 8;
 }tbl_node_t;
 
+
+static td_int32 _td_table_normal_serialize(tbl_desc_t *p_rec, tbl_manage_t *p_this, td_elem_t *p_elements, int count){
+    td_int32        i = 0, j = 0;
+    td_uchar        s_buf[4]    = {0};
+    st_data_cpy_t   data;
+    tbl_head_t  *   p_head = p_rec->p_head;     
+    
+    data.buffer = p_this->buffer;
+    data.buffer_length = MAX_BUFFER_LEN;
+    data.buffer_used = 0;
+
+    for(i = 0; i < count; i++){
+        td_elem_t *p_elem = &p_elements[i];
+
+        for(j = 0; j < p_rec->head_cnt; j ++){
+            if(strcmp(p_elem->p_tag, p_head[j].title) == 0){
+                if(p_head[j].attr_mask == TD_ELEM_TYPE_AUTO_INCREASE){
+                    break;
+                }
+
+                TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)&p_head[j].idx, 1) != 1, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                
+                if(p_head[j].attr_mask == TD_ELEM_TYPE_INTEGER){
+                    TD_DWORD_SERIALIZE(s_buf, *p_elem->content);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 4) != 4, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                }else
+                if((p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED || p_head[j].attr_mask == TD_ELEM_TYPE_STRING) 
+                    && p_elem->content){
+                    char *p_str = (char *)p_elem->content;
+                    int len = strlen(p_str);
+
+                    if(p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED){
+                        len = len > p_head[j].fix_length ? p_head[j].fix_length : len;
+                    }
+                    TD_WORD_SERIALIZE(s_buf, len);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 2) != 2, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)p_elem->content, len) != len, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                }
+            }
+        }
+    }
+
+    return data.buffer_used;
+}
 
 static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, used_node_t *p_used, list_head_t *p_list_head){
     char table_buffer[512] = {0};
@@ -96,6 +143,7 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
 
         p_header->idx = p_tbit_serialize->idx;
         p_header->attr_mask = p_tbit_serialize->attr_mask;
+        p_header->fix_length = p_tbit_serialize->fix_length;
 
         tiny_db_assert(p_tbit_serialize->title_len == 0);
         offset = p_tbit_serialize->title_off;
@@ -127,11 +175,6 @@ static tbl_desc_t * _td_table_get_desinfo(td_int32 fd, tbl_manage_t *p_this, cha
     return NULL;
 }
 
-#if 0
-static td_int32 _td_table_manage_serialize(, ){
-
-}
-#endif
 
 td_int32 tiny_db_table_init(td_int32 fd, tbl_manage_t *p_this){
     td_int32  ret = TR_FAIL;
@@ -287,17 +330,25 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
         switch(p_elem->type){
             case TD_ELEM_TYPE_STRING:
                 esti_len += 20;
-                p_item[i].attr_mask = 0b11111000;
+                //p_item[i].attr_mask = 0b11111000;
+                p_item[i].attr_mask = TD_ELEM_TYPE_STRING;
                 break;
 
             case TD_ELEM_TYPE_STRING_FIXED:
-                esti_len += (1 + 2 + *(int *)p_elem->content);
-                p_item[i].attr_mask = 0b11111100;
+                //p_item[i].attr_mask = 0b11111100;
+                p_item[i].attr_mask = TD_ELEM_TYPE_STRING_FIXED;
+                p_item[i].fix_length = *(int *)p_elem->content;
+
+                if(p_item[i].fix_length >= MAX_STRING_FIX_LEN){
+                    p_item[i].fix_length = 64;
+                }
+                esti_len += (1 + 2 + p_item[i].fix_length);
                 break;
             
             case TD_ELEM_TYPE_INTEGER:
                 esti_len += 5;
-                p_item[i].attr_mask = 0b11111101;
+                //p_item[i].attr_mask = 0b11111101;
+                p_item[i].attr_mask = TD_ELEM_TYPE_INTEGER;
                 break;
             
             case TD_ELEM_TYPE_AUTO_INCREASE:
@@ -306,7 +357,8 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
                     goto _err;
                 }else{
                     already_has = 1;
-                    p_item[i].attr_mask = 0b11111111;
+                    //p_item[i].attr_mask = 0b11111111;
+                    p_item[i].attr_mask = TD_ELEM_TYPE_AUTO_INCREASE;
                 }
                 break;
 
@@ -386,6 +438,22 @@ td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title
         
         ret = TR_SUCCESS;
     }
+
+    return ret;
+}
+
+td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_t *p_elements, int count){
+    td_int32        ret     = TR_FAIL;
+    tbl_desc_t  *   p_rec   = NULL;
+
+    p_rec = _td_table_get_desinfo(fd, p_this, title);
+    TD_TRUE_RETVAL(p_rec == NULL, ret, "table %s is not exist\n", title);
+
+    ret = _td_table_normal_serialize(p_rec, p_this, p_elements, count);
+    TD_TRUE_RETVAL(ret <= 0, TR_FAIL, "Serialized fail\n");
+
+    ret = tiny_db_node_set(fd, &p_rec->node, p_this->buffer, ret);
+    TINY_DB_INFO("insert into %s, ret=%d", title, ret);
 
     return ret;
 }
