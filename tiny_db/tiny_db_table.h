@@ -50,6 +50,13 @@ td_int32    tiny_db_table_destroy(td_int32 fd, tbl_manage_t *p_this, char *title
 
 td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_t *p_elements, int count);
 
+td_int32    tiny_db_table_delete(td_int32 fd, tbl_manage_t *p_this, char *title, td_condition_t *p_cond);
+
 td_int32    tiny_db_table_update(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_column, td_condition_t *p_cond);
+
+td_int32    tiny_db_table_select_count(td_int32 fd, tbl_manage_t *p_this, char *title, td_select_t *p_select);
+
+td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_elements, tiny_db_callback callback, td_select_t *p_select, void *p_data);
+
 
 #endif

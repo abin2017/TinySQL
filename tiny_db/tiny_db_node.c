@@ -174,6 +174,7 @@ static td_int32 _td_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer,
 
     p_module->free_node_count -= need_cnt;
     p_node->node_pos = p_module->p_free_nodes[p_module->free_node_count - 1];
+    p_module->used_count ++;
 
     _td_node_write(fd, p_module, &p_module->p_free_nodes[p_module->free_node_count - 1], need_cnt, p_node->node_id, buffer, buffer_len);
     
@@ -190,6 +191,8 @@ static td_int32 _td_node_del_by_pos(td_int32 fd, mod_node_t *p_module, used_node
     td_uint16 page_index = 0, node_index = 0;
     db_node_t header;
     td_uchar bf[NODE_NEXT_LEN] = {0};
+
+    p_module->used_count --;
 
     block.ppblock = (void **)&p_module->p_free_nodes;
     block.current_cnt = (td_uint16 *)&p_module->free_node_count;
@@ -241,7 +244,7 @@ static td_int32 _td_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 n
                     list_del(&p_rec->list);
                     ret = TR_SUCCESS;
                     break;
-                }         
+                }
             }
         }
     }
@@ -460,6 +463,18 @@ td_int32    tiny_db_node_get_by_id(td_int32 fd, mod_node_t *p_module, td_int16 n
 
 td_int32    tiny_db_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id){
     return _td_node_del_by_id(fd, p_module, node_id, NULL);
+}
+
+td_int32    tiny_db_node_del_by_pos(td_int32 fd, mod_node_t *p_module, used_node_t *p_rec){
+    td_int32 ret = TR_FAIL;
+
+    if(p_rec){
+        list_del(&p_rec->list);
+        _td_node_del_by_pos(fd, p_module, p_rec);
+        tiny_db_free(p_rec);
+    }      
+
+    return ret;
 }
 
 //自增夹node id

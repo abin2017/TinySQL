@@ -99,6 +99,15 @@ int tiny_db_api_insert_data(int handle, char *title, td_elem_list_t *p_elements,
     return tiny_db_table_insert(p_this->fd, &p_this->entrance, title, p_elements->p_elem, p_elements->count);
 }
 
+int tiny_db_api_delete_data(int handle, char *title, td_condition_t *p_cond, int param){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title, TD_FAIL, "title %p\n", title);
+    TD_TRUE_RETVAL(NULL == p_cond || 0 >= p_cond->count, TD_FAIL, "param error\n");
+
+    return tiny_db_table_delete(p_this->fd, &p_this->entrance, title, p_cond);
+}
+
 int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements, td_condition_t *p_cond, int param){
     tiny_db_t *p_this = (tiny_db_t *)handle;
 
@@ -106,4 +115,20 @@ int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements,
     TD_TRUE_RETVAL(NULL == p_elements || NULL == p_elements->p_elem || NULL == p_cond, TD_FAIL, "param error\n");
 
     return tiny_db_table_update(p_this->fd, &p_this->entrance, title, p_elements, p_cond);
+}
+
+int tiny_db_api_select_count(int handle, char *title, td_select_t *p_select, int param){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title || NULL == p_select, 0, "title %p\n", title);
+
+    return tiny_db_table_select_count(p_this->fd, &p_this->entrance, title, p_select);
+}
+
+int tiny_db_api_select_data(int handle, char *title, td_elem_list_t *p_elements, tiny_db_callback callback, td_select_t *p_select, void *p_data){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title || NULL == p_select || NULL == callback || NULL == p_elements, 0, "title %p\n", title);
+
+    return tiny_db_table_select_data(p_this->fd, &p_this->entrance, title, p_elements, callback, p_select, p_data);
 }
