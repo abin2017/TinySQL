@@ -103,7 +103,7 @@ int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements,
     tiny_db_t *p_this = (tiny_db_t *)handle;
 
     TD_TRUE_RETVAL(NULL == title, TD_FAIL, "title %p\n", title);
-    TD_TRUE_RETVAL(NULL == p_elements || NULL == p_elements->p_elem, TD_FAIL, "param error\n");
+    TD_TRUE_RETVAL(NULL == p_elements || NULL == p_elements->p_elem || NULL == p_cond, TD_FAIL, "param error\n");
 
     return tiny_db_table_update(p_this->fd, &p_this->entrance, title, p_elements, p_cond);
 }

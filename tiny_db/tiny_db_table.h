@@ -12,7 +12,8 @@ typedef struct{
     union{
         td_char *   title;
         struct {
-            td_uint16   offset;
+            td_uint16   used : 1;
+            td_uint16   offset : 15;
             td_uint16   length;
         }buf_item;
     };

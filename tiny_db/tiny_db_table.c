@@ -63,7 +63,7 @@ static td_int32 _td_table_condition_tag2index(tbl_head_t *p_head, int head_cnt, 
         }else{
             for(j = 0; j < head_cnt; j++){
                 if(strcmp(p_head[j].title, p_elem->p_tag) == 0){
-                    p_elem->tag_idx = p_head[j].idx;
+                    p_elem->tag_idx = i;
                     break;
                 }
             }
@@ -83,6 +83,7 @@ static td_int32 _td_table_buffer_preparse(tbl_desc_t *p_desc, tbl_manage_t *p_th
 
     for(; i < p_desc->head_cnt; i++){
         p_desc->p_head_proc[i].buf_item.offset = 0;
+        p_desc->p_head_proc[i].buf_item.used = 0;
     }
 
     while(cursor < buffer_len){
@@ -128,11 +129,187 @@ static td_int32 _td_table_buffer_preparse(tbl_desc_t *p_desc, tbl_manage_t *p_th
     return TR_SUCCESS;
 }
 
-static td_int32 _td_table_condition_check(tbl_desc_t *p_desc, tbl_manage_t *p_this, td_condition_t *p_cond){
-    return TD_SUCCESS;
+static td_int32 _td_table_condition_arithmetic(td_uint32 *p_src, td_uint32 src_len, td_uint32 *p_base, td_arithmetic_t arithmetic, td_int32 be_string){
+    td_int32 ret = TR_FAIL;
+    
+    if(be_string == 0){
+        switch(arithmetic){
+            case TD_ARITHMETIC_EQUAL:
+                if(*p_src == *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+
+            case TD_ARITHMETIC_UNEQUAL:
+                if(*p_src != *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+
+            case TD_ARITHMETIC_GREATER:
+                if(*p_src > *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+
+            case TD_ARITHMETIC_GREATER_QUUAL:
+                if(*p_src >= *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break;   
+
+            case TD_ARITHMETIC_LESS:
+                if(*p_src < *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+            
+            case TD_ARITHMETIC_LESS_QUUAL:
+                if(*p_src <= *p_base){
+                    ret = TR_SUCCESS; 
+                }
+                break; 
+
+                default:
+                    ;
+        }
+    }else{
+        char *p_str = (char *)p_src;
+        char *p_dst = (char *)p_base;
+        char bak = p_str[src_len];
+
+        p_str[src_len] = 0;
+
+        switch(arithmetic){
+            case TD_ARITHMETIC_EQUAL:
+                if(strcmp(p_str, p_dst) == 0){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+
+            case TD_ARITHMETIC_UNEQUAL:
+                if(strcmp(p_str, p_dst) != 0){
+                    ret = TR_SUCCESS; 
+                }
+                break;
+
+                default:
+                    ;
+        }
+
+        p_str[src_len] = bak;
+    }
+
+    return ret;
 }
 
-static td_int32 _td_table_make_update_buffer(tbl_head_t *p_head, int head_cnt, tbl_manage_t *p_this, td_elem_list_t *p_column){
+static td_int32 _td_table_condition_check(tbl_desc_t *p_desc, tbl_manage_t *p_this, td_uint32 node_id, td_condition_t *p_cond){
+    int         i = 0;
+    td_int32    ret = TR_FAIL, val = 0;
+    td_uchar   *p_cursor = NULL;
+    tbl_head_t *p_head = p_desc->p_head_proc;
+
+    while(i < p_cond->count){
+        td_cond_elem_t *p_elem = &p_cond->p_elements[i];
+        
+        ret = TR_FAIL;
+        if(p_elem->p_next){
+            ret = _td_table_condition_check(p_desc, p_this, node_id, p_elem->p_next);
+        }else{
+            if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_AUTO_INCREASE){
+                if(p_elem->arithmetic < TD_ARITHMETIC_MAX){
+                    ret = _td_table_condition_arithmetic((td_uint32 *)&node_id, 4, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                }
+            }else
+            if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_INTEGER){
+                if(p_elem->arithmetic < TD_ARITHMETIC_MAX){
+                    p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
+                    val = TD_MAKE_DWORD(p_cursor);
+                    ret = _td_table_condition_arithmetic((td_uint32 *)&val, 4, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                }
+            }else
+            if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_STRING || p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_STRING_FIXED){
+                if(p_elem->arithmetic < TD_ARITHMETIC_UNEQUAL && p_elem->content && p_head[p_elem->tag_idx].buf_item.length){
+                    p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
+                    val = p_head[p_elem->tag_idx].buf_item.length;
+                    ret = _td_table_condition_arithmetic((td_uint32 *)p_cursor, val, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                }
+            }
+        }
+
+        if(p_cond->logic == TD_LOGIC_OR){
+            if(ret == TR_SUCCESS){
+                break;
+            }
+        }else if(p_cond->logic == TD_LOGIC_AND){
+            if(ret == TR_FAIL){
+                break;
+            }
+        }
+
+        i ++;
+    }
+
+    return ret;
+}
+
+static td_int32 _td_table_make_update_buffer(tbl_head_t *p_head, tbl_head_t *p_head_proc, int head_cnt, tbl_manage_t *p_this, td_int32 * buffer_length, td_elem_list_t *p_column){
+    char buffer[MAX_BUFFER_LEN] = {0};
+    char s_buf[4] = {0};
+    st_data_cpy_t   data;
+    td_int32        i = 0, j = 0;
+
+    data.buffer = buffer;
+    data.buffer_length = MAX_BUFFER_LEN;
+    data.buffer_used = 0;
+
+    for(i = 0; i < p_column->count; i++){
+        td_elem_t *p_elem = &p_column->p_elem[i];
+
+        for(j = 0; j < head_cnt; j ++){
+            if(strcmp(p_elem->p_tag, p_head[j].title) == 0){
+                if(p_head[j].attr_mask == TD_ELEM_TYPE_AUTO_INCREASE){
+                    break;
+                }
+
+                p_head_proc[j].buf_item.used = 1;
+                TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)&p_head[j].idx, 1) != 1, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                
+                if(p_head[j].attr_mask == TD_ELEM_TYPE_INTEGER){
+                    TD_DWORD_SERIALIZE(s_buf, *p_elem->content);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 4) != 4, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                }else
+                if((p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED || p_head[j].attr_mask == TD_ELEM_TYPE_STRING) 
+                    && p_elem->content){
+                    char *p_str = (char *)p_elem->content;
+                    int len = strlen(p_str);
+
+                    if(p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED){
+                        len = len > p_head[j].fix_length ? p_head[j].fix_length : len;
+                    }
+                    TD_WORD_SERIALIZE(s_buf, len);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 2) != 2, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                    TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)p_elem->content, len) != len, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+                }
+            }
+        }
+    }
+
+    for(i = 0; i < head_cnt; i++){
+        if(p_head_proc[j].buf_item.used == 0 && p_head_proc[j].buf_item.offset){
+            if(p_head_proc[i].attr_mask == TD_ELEM_TYPE_INTEGER){
+                TD_TRUE_RETVAL(tiny_db_copy_block(&data, &p_this->buffer[p_head_proc[j].buf_item.offset - 1], 5) != 5, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+            }else
+            if(p_head_proc[i].attr_mask == TD_ELEM_TYPE_STRING || p_head_proc[i].attr_mask == TD_ELEM_TYPE_STRING_FIXED){
+                int len = p_head_proc[j].buf_item.length + 3;
+                TD_TRUE_RETVAL(tiny_db_copy_block(&data, &p_this->buffer[p_head_proc[j].buf_item.offset - 3], len) != len, TR_FAIL, "copy length fail %d\n", data.buffer_used);
+            }
+        }
+    }
+
+    *buffer_length = data.buffer_used;
+    memcpy(p_this->buffer, data.buffer, data.buffer_used);
+
     return TD_SUCCESS;
 }
 
@@ -585,7 +762,7 @@ td_int32    tiny_db_table_update(td_int32 fd, tbl_manage_t *p_this, char *title,
                 TD_TRUE_RETVAL(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, TR_FAIL, "get node fail [%s, %s]", p_node->node_id, p_node->node_pos);
                 TD_TRUE_RETVAL(_td_table_buffer_preparse(p_des, p_this, buffer_len, p_cond) == TR_FAIL, TR_FAIL, "node [%s, %s], parse fail", p_node->node_id, p_node->node_pos);
 
-                if(_td_table_condition_check(p_des, p_this, p_cond) == TR_SUCCESS && _td_table_make_update_buffer(p_des->p_head_proc, p_des->head_cnt, p_this, p_column) == TR_SUCCESS){
+                if(_td_table_condition_check(p_des, p_this, p_node->node_id, p_cond) == TR_SUCCESS && _td_table_make_update_buffer(p_des->p_head, p_des->p_head_proc, p_des->head_cnt, p_this, &buffer_len, p_column) == TR_SUCCESS){
 
                     return tiny_db_node_update_by_pos(fd, p_module, p_node, p_this->buffer, buffer_len);
                 }
