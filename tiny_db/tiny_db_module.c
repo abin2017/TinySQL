@@ -314,7 +314,7 @@ td_int32 tiny_db_module_delete(td_int32 fd, td_mod_info_t *p_mod){
 
 //module 的page index从0开始，返回真实的偏移, page index 指向的是module数据结构中p_pages的下标
 td_int32 tiny_db_module_map(td_int32 fd, td_mod_info_t *p_mod, td_int32 page_index){
-    tiny_db_assert(page_index >= p_mod->page_count);
+    tiny_db_assert(page_index < p_mod->page_count);
     return tiny_db_get_page_offset(fd, p_mod->p_pages[page_index]);//.page_id);
 }
 

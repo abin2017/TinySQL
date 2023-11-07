@@ -629,6 +629,10 @@ td_int32 tiny_db_table_deinit(td_int32 fd, tbl_manage_t *p_this){
         tiny_db_free(p_this->p_table);
     }
 
+    if(p_this->buffer){
+        tiny_db_free(p_this->buffer);
+    }
+
     memset(p_this, 0, sizeof(tbl_manage_t));
 
     return TR_SUCCESS;

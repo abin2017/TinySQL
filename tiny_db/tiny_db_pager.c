@@ -96,9 +96,10 @@ td_int32 tiny_db_pager_init(td_int32 fd){
             ret = TR_SUCCESS;
         }
 
-        tiny_db_free(p_buf);
+        p_buf[0] = p_buf[1] = p_buf[2] = p_buf[3] = 0; 
 
-        tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, 0);
+        tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, p_buf);
+        tiny_db_free(p_buf);
     }
 
     return ret;

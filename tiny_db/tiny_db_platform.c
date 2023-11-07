@@ -14,7 +14,7 @@
 static int malloc_count = 0;
 
 void tiny_db_memory_usage(char *_func, int _line){
-    tiny_db_printf("\e[1;36m[%s] line %d malloc count %d\033[0m", _func, _line, malloc_count);
+    tiny_db_printf("\e[1;36m[%s] line %d malloc count %d\033[0m\n", _func, _line, malloc_count);
 }
 
 char * tiny_db_strdup_fix(char *str, unsigned int len){
@@ -48,7 +48,13 @@ void * tiny_db_malloc(unsigned int size){
 }
 
 void * tiny_db_realloc(void *p, unsigned int size){
-    return realloc(p, size);
+    void *p_ptr = NULL;
+    p_ptr =  realloc(p, size);
+
+    if(p_ptr && p == NULL){
+        malloc_count++;
+    }
+    return p_ptr;
 }
 
 
@@ -80,7 +86,11 @@ int tiny_db_OsFileExists(const char* path){
 
 int tiny_db_OsOpen(const char* path){
     FILE *fp = NULL;
-    fp = fopen(path, "ab+");
+    fp = fopen(path, "rb+");
+
+    if(fp == NULL){
+        fp = fopen(path, "wb+");
+    }
 
     if(fp){
         fseek((FILE *)fp, 0, SEEK_SET);
@@ -106,7 +116,9 @@ int tiny_db_OsRead(int OsFile, void* buffer, int amt){
 
 int tiny_db_OsWrite(int OsFile, const void* buffer, int amt){
     if(OsFile){
-        return fwrite(buffer, 1, amt, (FILE *)OsFile);
+        int c = fwrite(buffer, 1, amt, (FILE *)OsFile);
+        fflush((FILE *)OsFile);
+        return c;
     }else{
         return TR_FAIL;
     }

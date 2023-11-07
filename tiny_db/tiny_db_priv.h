@@ -23,7 +23,7 @@
 //#define TD_MAKE_DWORD(low, high)    ((td_uint32)(((td_uint16)(low)) | (((td_uint32)((td_uint16)(high))) << 16)))
 
 #define TD_MAKE_WORD(serial)     ((td_uint16)(((td_uchar)(serial[0])) | (((td_uint16)((td_uchar)(serial[1]))) << 8)))
-#define TD_MAKE_DWORD(serial)    (serial[0] | (serial[1] >> 8) | (serial[2] >> 16) | (serial[3] >> 24))
+#define TD_MAKE_DWORD(serial)    (serial[0] | (serial[1] << 8) | (serial[2] << 16) | (serial[3] << 24))
 
 #define TD_WORD_SERIALIZE(serial, word)     { serial[0] = word & 0xFF; serial[1] = (word >> 8) & 0xFF;}
 #define TD_DWORD_SERIALIZE(serial, dword)   { serial[0] = dword & 0xFF; serial[1] = (dword >> 8) & 0xFF; serial[2] = (dword >> 16) & 0xFF; serial[3] = (dword >> 24) & 0xFF;}
