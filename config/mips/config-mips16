@@ -1,0 +1,18 @@
+CFLAGS += -EL -march=mips32r2 -mips16 -minterlink-mips16 -mxgot -mlong-calls -mabi=32 -mno-abicalls -Wall -Wno-pointer-sign -Os -Wno-pointer-to-int-cast  -ffunction-sections 
+CFLAGS += -I./include -I./tiny_db
+
+TEST_CFLAGS := $(CFLAGS)  -I./test/include
+LINK_FLAGS := -L ./ -ltiny_db #-lpthread -lcurl -lssl -lcrypto -lz
+
+CC=mips-linux-gnu-gcc
+AR=mips-linux-gnu-ar
+RANLIB=mips-linux-gnu-gcc-ranlib
+STRIP=mips-linux-gnu-strip
+
+DEFS := -DPRINT_ON -D__LINUX__
+
+LIBNMAE := libtiny_db.a
+OUTPUT_TMP:=output/mips
+
+ENABLE_SQL_GRAMMER = N
+ENABLE_TEST = N
