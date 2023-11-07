@@ -57,6 +57,8 @@ typedef struct{
     td_mod_info_t   module;
 }mod_node_t;
 
+td_int32    tiny_db_node_adjust_node_len(td_int32 fd, td_uchar len);
+
 td_int32    tiny_db_node_init(td_int32 fd, mod_node_t *p_module);
 
 td_int32    tiny_db_node_deinit(td_int32 fd, mod_node_t *p_module);

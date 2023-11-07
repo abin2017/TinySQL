@@ -8,3 +8,5 @@ parser
 .config
 *.a
 output
+test.db
+test.elf

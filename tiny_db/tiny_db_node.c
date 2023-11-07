@@ -79,7 +79,7 @@ static td_int32 _td_node_write(td_int32 fd, mod_node_t *p_module, td_uint16 * p_
         }
 
         header.node_id = node_id;
-        tiny_db_assert(tiny_db_OsWrite(fd, &header, sizeof(db_node_t)) == TR_SUCCESS);
+        tiny_db_assert(tiny_db_OsWrite(fd, &header, sizeof(db_node_t)) == sizeof(db_node_t));
 
         p_cursor = &buffer[save_pos];
 
@@ -112,7 +112,7 @@ static td_int32 _td_node_write(td_int32 fd, mod_node_t *p_module, td_uint16 * p_
         }
 
         tiny_db_assert(tiny_db_OsSeek(fd, node_buff) == TR_SUCCESS);
-        tiny_db_assert(tiny_db_OsWrite(fd, buf, p_module->node_length) == TR_SUCCESS);
+        tiny_db_assert(tiny_db_OsWrite(fd, buf, p_module->node_length) == p_module->node_length);
     }
 
 
@@ -120,7 +120,7 @@ static td_int32 _td_node_write(td_int32 fd, mod_node_t *p_module, td_uint16 * p_
 }
 
 static td_int32 _td_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer, td_int32 buffer_len, used_node_t *p_node){
-    int need_cnt = (buffer_len + NODE_LENGTH_LEN)/(p_module->node_length - NODE_NEXT_LEN);
+    int need_cnt = (buffer_len + NODE_LENGTH_LEN + p_module->node_length - NODE_NEXT_LEN - 1)/(p_module->node_length - NODE_NEXT_LEN);
     td_int32 ret = TR_FAIL;
 
     if(need_cnt == 0){
@@ -173,10 +173,10 @@ static td_int32 _td_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer,
     }
 
     p_module->free_node_count -= need_cnt;
-    p_node->node_pos = p_module->p_free_nodes[p_module->free_node_count - 1];
+    p_node->node_pos = p_module->p_free_nodes[p_module->free_node_count];
     p_module->used_count ++;
 
-    _td_node_write(fd, p_module, &p_module->p_free_nodes[p_module->free_node_count - 1], need_cnt, p_node->node_id, buffer, buffer_len);
+    _td_node_write(fd, p_module, &p_module->p_free_nodes[p_module->free_node_count], need_cnt, p_node->node_id, buffer, buffer_len);
     
     return TR_SUCCESS;
 }
@@ -262,6 +262,23 @@ static td_int32 _td_node_del_by_id(td_int32 fd, mod_node_t *p_module, td_int16 n
     return ret;
 }
 
+td_int32    tiny_db_node_adjust_node_len(td_int32 fd, td_uchar len){
+    if(len < NODE_MIN_LEN){
+        len = NODE_MIN_LEN;   
+    }else{
+        int page_size = tiny_db_get_page_size(fd);
+        int count = 0;
+
+        count = (page_size - NODE_CONTENT_START)/len;
+
+        len = (page_size - NODE_CONTENT_START)/count;
+
+        if(len > 255){
+            len = 255;
+        }
+    }
+    return len;
+}
 
 td_int32    tiny_db_node_init(td_int32 fd, mod_node_t *p_module){
     int page_size = 0, i = 0, j = 0;
@@ -388,7 +405,7 @@ td_int32    tiny_db_node_get_by_pos(td_int32 fd, mod_node_t *p_module, used_node
         node_buff = offset + NODE_CONTENT_START + node_index * p_module->node_length;
 
         tiny_db_assert(tiny_db_OsSeek(fd, node_head) == TR_SUCCESS);
-        tiny_db_assert(tiny_db_OsRead(fd, &header, sizeof(db_node_t)) == 4 && (header.node_state == RECORD_STATE_START || header.node_state == RECORD_STATE_UESD) && (header.node_id != p_rec->node_id));
+        tiny_db_assert(tiny_db_OsRead(fd, &header, sizeof(db_node_t)) == 4 && (header.node_state == RECORD_STATE_START || header.node_state == RECORD_STATE_UESD) && (header.node_id == p_rec->node_id));
 
         tiny_db_assert(tiny_db_OsSeek(fd, node_buff) == TR_SUCCESS);
         tiny_db_assert(tiny_db_OsRead(fd, s_bf, p_module->node_length) == p_module->node_length);

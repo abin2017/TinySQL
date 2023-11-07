@@ -482,7 +482,7 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     p_des->node_id = p_used->node_id;
 
     //解析表头信息
-    offset = p_tblm_serialize->title_len;
+    offset = p_tblm_serialize->title_off;
     p_des->title = tiny_db_strdup_fix(&table_buffer[offset], p_tblm_serialize->title_len);
     tiny_db_assert(p_des->title != NULL);
 
@@ -508,10 +508,12 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
         p_header->attr_mask = p_tbit_serialize->attr_mask;
         p_header->fix_length = p_tbit_serialize->fix_length;
 
-        tiny_db_assert(p_tbit_serialize->title_len == 0);
+        tiny_db_assert(p_tbit_serialize->title_len != 0);
         offset = p_tbit_serialize->title_off;
         p_header->title = tiny_db_strdup_fix(&table_buffer[offset], p_tbit_serialize->title_len);
         tiny_db_assert(p_header->title != NULL);
+
+        p_tbit_serialize += 1;
     }
 
     p_des->p_head_proc = tiny_db_malloc(sizeof(tbl_head_t) * p_des->head_cnt);
@@ -708,7 +710,7 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
             case TD_ELEM_TYPE_STRING_FIXED:
                 //p_item[i].attr_mask = 0b11111100;
                 p_item[i].attr_mask = TD_ELEM_TYPE_STRING_FIXED;
-                p_item[i].fix_length = *(int *)p_elem->content;
+                p_item[i].fix_length = (int)p_elem->content;
 
                 if(p_item[i].fix_length >= MAX_STRING_FIX_LEN){
                     p_item[i].fix_length = 64;
@@ -752,6 +754,8 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
     if(esti_len >= 255){
         p_node->node_len = 255;
     }
+
+    p_node->node_len = tiny_db_node_adjust_node_len(fd, p_node->node_len);
 
     p_des->node.last_node_id = p_node->last_node_id;
     p_des->node.node_length = p_node->node_len;
