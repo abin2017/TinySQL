@@ -333,7 +333,7 @@ static td_int32 _td_table_make_update_buffer(tbl_head_t *p_head, tbl_head_t *p_h
                 TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)&p_head[j].idx, 1) != 1, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                 
                 if(p_head[j].attr_mask == TD_ELEM_TYPE_INTEGER){
-                    TD_DWORD_SERIALIZE(s_buf, *p_elem->content);
+                    TD_DWORD_SERIALIZE(s_buf, (int)p_elem->content);
                     TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 4) != 4, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                 }else
                 if((p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED || p_head[j].attr_mask == TD_ELEM_TYPE_STRING) 
@@ -435,7 +435,7 @@ static td_int32 _td_table_normal_serialize(tbl_desc_t *p_rec, tbl_manage_t *p_th
                 TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)&p_head[j].idx, 1) != 1, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                 
                 if(p_head[j].attr_mask == TD_ELEM_TYPE_INTEGER){
-                    TD_DWORD_SERIALIZE(s_buf, *p_elem->content);
+                    TD_DWORD_SERIALIZE(s_buf, (int)p_elem->content);
                     TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 4) != 4, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                 }else
                 if((p_head[j].attr_mask == TD_ELEM_TYPE_STRING_FIXED || p_head[j].attr_mask == TD_ELEM_TYPE_STRING) 
@@ -450,6 +450,7 @@ static td_int32 _td_table_normal_serialize(tbl_desc_t *p_rec, tbl_manage_t *p_th
                     TD_TRUE_RETVAL(tiny_db_copy_block(&data, s_buf, 2) != 2, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                     TD_TRUE_RETVAL(tiny_db_copy_block(&data, (char *)p_elem->content, len) != len, TR_FAIL, "copy length fail %d\n", data.buffer_used);
                 }
+                break;
             }
         }
     }
@@ -841,7 +842,7 @@ td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title,
     TD_TRUE_RETVAL(ret <= 0, TR_FAIL, "Serialized fail\n");
 
     ret = tiny_db_node_set(fd, &p_rec->node, p_this->buffer, ret);
-    TINY_DB_INFO("insert into %s, ret=%d", title, ret);
+    TINY_DB_INFO("insert into %s, ret=%d\n", title, ret);
 
     return ret;
 }
