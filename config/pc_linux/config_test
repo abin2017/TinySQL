@@ -1,0 +1,18 @@
+CFLAGS += -Wall -Wimplicit-function-declaration -g -m32 -Wno-unused-but-set-variable -Wno-pointer-sign
+CFLAGS += -I./include -I./tiny_db
+
+TEST_CFLAGS := $(CFLAGS)  -I./test/include
+LINK_FLAGS := -L ./ -ltiny_db -lpthread -lcurl -lssl -lcrypto -lz
+
+CC=gcc
+AR=ar
+RANLIB=ranlib
+STRIP=strip
+
+DEFS := -DPRINT_ON -D__LINUX__
+
+LIBNMAE := libtiny_db.a
+OUTPUT_TMP:=output/pc_linux
+
+ENABLE_SQL_GRAMMER = N
+ENABLE_TEST = Y

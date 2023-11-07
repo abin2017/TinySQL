@@ -13,6 +13,10 @@
 
 static int malloc_count = 0;
 
+void tiny_db_memory_usage(char *_func, int _line){
+    tiny_db_printf("\e[1;36m[%s] line %d malloc count %d\033[0m", _func, _line, malloc_count);
+}
+
 char * tiny_db_strdup_fix(char *str, unsigned int len){
     char *ptr = malloc(len + 1);
     if (ptr != NULL) {

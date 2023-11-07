@@ -8,7 +8,7 @@
           "name": "C/C++ Launch",
           "type": "cppdbg",
           "request": "launch",
-          "program": "${workspaceFolder}/parser",
+          "program": "${workspaceFolder}/test.elf",
           "args": [],
           "stopAtEntry": false,
           "cwd": "${workspaceFolder}",

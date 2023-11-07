@@ -14,6 +14,7 @@
 #endif
 
 #define TINY_LOG_JUMP tiny_db_printf
+#define TINY_DB_MEMORY_USAGE() tiny_db_memory_usage((char *)__FUNCTION__, (int) __LINE__)
 
 typedef struct{
     void **ppblock;
@@ -50,6 +51,8 @@ int tiny_db_insert_block(st_data_block_t *in);
 int tiny_db_copy_block(st_data_cpy_t *in, char *src, int src_len);
 
 void tiny_db_assert(int expression);
+
+void tiny_db_memory_usage(char *_func, int _line);
 
 int tiny_db_OsFileDelete(const char* path);
 
