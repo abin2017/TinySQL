@@ -132,3 +132,11 @@ int tiny_db_api_select_data(int handle, char *title, td_elem_list_t *p_elements,
 
     return tiny_db_table_select_data(p_this->fd, &p_this->entrance, title, p_elements, callback, p_select, p_data);
 }
+
+int tiny_db_api_show_info(int handle, char *title, void *p_data, tiny_db_callback callback){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+
+    TD_TRUE_RETVAL(NULL == title, 0, "title %p\n", title);
+
+    return tiny_db_table_show_info(p_this->fd, &p_this->entrance, title, p_data, callback);
+}

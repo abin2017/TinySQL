@@ -373,21 +373,37 @@ static td_int32 _td_table_make_update_buffer(tbl_head_t *p_head, tbl_head_t *p_h
 static int _td_table_notify_data(tbl_desc_t *p_desc, tbl_manage_t *p_this, td_uint32 node_id, td_elem_list_t *p_elements, void *p_data, tiny_db_callback callback){
     int         i = 0;
     
-    int         argc = p_elements->count;
+    int         argc = p_elements ? p_elements->count : p_desc->head_cnt;
     char    *   argv[argc];
     int         argv_len[argc]; 
+    int         argv_type[argc]; 
     char    *   col_names[argc];
 
     tbl_head_t *p_head = p_desc->p_head_proc;
+    td_elem_t   elems[p_desc->head_cnt];
+    td_elem_list_t test;
+
+    memset(&test, 0, sizeof(td_elem_list_t));
+    test.count = p_desc->head_cnt;
+
+    if(p_elements == NULL){
+        test.p_elem = elems;
+        p_elements = &test;
+        for(i = 0; i < p_desc->head_cnt; i++){
+            elems[i].type = p_desc->p_head[i].attr_mask;
+            elems[i].p_tag = p_desc->p_head[i].title;
+            elems[i].content = (int *)i;
+        }
+    }
 
     for(i = 0; i < p_elements->count; i ++){
         int tag_idx = (int)p_elements->p_elem[i].content;
-
+        argv_type[i] = p_head[tag_idx].attr_mask;
         if(p_head[tag_idx].attr_mask == TD_ELEM_TYPE_AUTO_INCREASE){
             argv[i] = (char *)node_id;
             argv_len[i] = 4;
         }else if(p_head[tag_idx].attr_mask == TD_ELEM_TYPE_INTEGER){
-            if(p_head[tag_idx].buf_item.offset >= 0){
+            if(p_head[tag_idx].buf_item.offset > 0){
                 char *p = &p_this->buffer[p_head[tag_idx].buf_item.offset];
                 td_uint32 val = TD_MAKE_DWORD(p);
                 argv[i] = (char *)val;
@@ -397,7 +413,7 @@ static int _td_table_notify_data(tbl_desc_t *p_desc, tbl_manage_t *p_this, td_ui
                 argv_len[i] = 0;
             }
         }else{
-            if(p_head[tag_idx].buf_item.offset >= 0){
+            if(p_head[tag_idx].buf_item.offset > 0){
                 argv[i] = (char *)&p_this->buffer[p_head[tag_idx].buf_item.offset];
                 argv_len[i] = p_head[tag_idx].buf_item.length;
             }else{
@@ -410,7 +426,7 @@ static int _td_table_notify_data(tbl_desc_t *p_desc, tbl_manage_t *p_this, td_ui
     }
 
 
-    return callback(p_data, argc, argv, argv_len, col_names);
+    return callback(p_data, argc, argv, argv_len, argv_type, col_names);
 }
 
 static td_int32 _td_table_normal_serialize(tbl_desc_t *p_rec, tbl_manage_t *p_this, td_elem_t *p_elements, int count){
@@ -481,6 +497,7 @@ static td_int32 _td_table_manage_parse(td_int32 fd, mod_node_t *p_table_mode, us
     list_add_tail(&p_des->list, p_list_head);
 
     p_des->node_id = p_used->node_id;
+    p_des->node_pos = p_used->node_pos;
 
     //解析表头信息
     offset = p_tblm_serialize->title_off;
@@ -714,7 +731,7 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
                 p_item[i].fix_length = (int)p_elem->content;
 
                 if(p_item[i].fix_length >= MAX_STRING_FIX_LEN){
-                    p_item[i].fix_length = 64;
+                    p_item[i].fix_length = MAX_STRING_FIX_LEN;
                 }
                 esti_len += (1 + 2 + p_item[i].fix_length);
                 break;
@@ -744,6 +761,7 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
         p_des->p_head[i].attr_mask = p_item[i].attr_mask;
         p_des->p_head[i].idx = p_item[i].idx;
         p_des->p_head[i].title = tiny_db_strdup(p_elem->p_tag);
+        p_des->p_head[i].fix_length = p_item[i].fix_length;
         TD_TRUE_JUMP(NULL == p_des->p_head[i].title, _err, "strdup %s fail\n", p_elem->p_tag);
     }
 
@@ -771,6 +789,7 @@ td_int32    tiny_db_table_create(td_int32 fd, tbl_manage_t *p_this, char *title,
     val = p_this->p_table->last_node_id;
 
     p_des->node_id = val;
+    p_des->node_pos = p_this->p_table->last_node_pos;
     TD_DWORD_SERIALIZE(s_buf, val);
     tiny_db_pager_set_rev(fd, TD_PAGER_REV_TBL_LAST_NODE, s_buf);
     list_add_tail(&p_des->list, &p_this->list_head);
@@ -843,6 +862,17 @@ td_int32    tiny_db_table_insert(td_int32 fd, tbl_manage_t *p_this, char *title,
 
     ret = tiny_db_node_set(fd, &p_rec->node, p_this->buffer, ret);
     TINY_DB_INFO("insert into %s, ret=%d\n", title, ret);
+
+    if(ret == TR_SUCCESS){ //update last node id to table manage head
+        int off = tiny_db_node_get_start_offset_by_pos(fd, p_this->p_table, p_rec->node_pos);
+        tbl_node_t nn ;
+        tiny_db_assert(tiny_db_OsSeek(fd, off) == TR_SUCCESS);
+        tiny_db_assert(tiny_db_OsRead(fd, &nn, sizeof(tbl_node_t)) == sizeof(tbl_node_t));
+        tiny_db_assert(nn.module_id == p_rec->node.module.module_id && nn.node_len == p_rec->node.node_length);
+        nn.last_node_id = p_rec->node.last_node_id;
+        tiny_db_assert(tiny_db_OsSeek(fd, off) == TR_SUCCESS);
+        tiny_db_assert(tiny_db_OsWrite(fd, &nn, sizeof(tbl_node_t)) == sizeof(tbl_node_t));
+    }
 
     return ret;
 }
@@ -1091,8 +1121,8 @@ td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *t
 
             while(p_nouse){
                 p_node = p_nouse->p_used_node;
-                TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%s, %s]", p_node->node_id, p_node->node_pos);
-                TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, p_select->order.tag_idx, &value) == TR_FAIL, _error, "node [%s, %s], parse fail", p_node->node_id, p_node->node_pos);
+                TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
+                TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, p_select->order.tag_idx, &value) == TR_FAIL, _error, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
 
                 if(p_select->limit_count == -1 || notify_count < p_select->limit_count){
                     TD_TRUE_JUMP(_td_table_notify_data(p_des, p_this, p_node->node_id, p_elements, p_data, callback) == TR_FAIL, _error, "copy failed\n");
@@ -1121,4 +1151,83 @@ td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *t
             tiny_db_free(p_sels);
         }
         return TR_FAIL;
+}
+
+
+
+
+td_int32    tiny_db_table_show_info(td_int32 fd, tbl_manage_t *p_this, char *title, void *p_data, tiny_db_callback callback){
+    tbl_desc_t      *   p_des     = NULL; 
+    mod_node_t      *   p_module  = NULL;
+
+    list_head_t     *   p_head = NULL;
+    list_head_t     *   p_tmp  = NULL;
+    used_node_t     *   p_node = NULL;
+    int                 buffer_len = MAX_BUFFER_LEN;
+
+
+    int                 i = 0, notify_count = 0;
+    select_node_t       head ;
+
+    head.p_next = NULL;
+
+    p_des = _td_table_get_desinfo(fd, p_this, title);
+    TD_TRUE_RETVAL(p_des == NULL, TR_FAIL, "table %s is not exist\n", title);
+
+    TINY_DB_INFO("table: %s\n", title);
+    TINY_DB_INFO("header count: %d\n", p_des->head_cnt);
+    TINY_DB_INFO("nodeid in table list: %d\n", p_des->node_id);
+
+    TINY_DB_INFO("node_length: %d\n", p_des->node.node_length);
+    TINY_DB_INFO("node count in one page: %d\n", p_des->node.node_cnt_in_1_page);
+    TINY_DB_INFO("last_node_id: %d\n", p_des->node.last_node_id);
+    TINY_DB_INFO("have records: %d\n", p_des->node.used_count);
+    TINY_DB_INFO("free nodes count: %d\n", p_des->node.free_node_count);
+    TINY_DB_INFO("free nodes position: \n");
+
+    for(i = 0; i < p_des->node.free_node_count; i++){
+        tiny_db_printf("[%03X, %02d] ", p_des->node.p_free_nodes[i]/p_des->node.node_cnt_in_1_page, p_des->node.p_free_nodes[i]%p_des->node.node_cnt_in_1_page);
+        if((i + 1) % 16 == 0){
+            tiny_db_printf("\n");
+        }
+    }
+    tiny_db_printf("\n");
+
+    TINY_DB_INFO("module_id %d: \n", p_des->node.module.module_id);
+    TINY_DB_INFO("module_pages: \n");
+    for(i = 0; i < p_des->node.module.page_count; i++){
+        tiny_db_printf("{page[%d] id %d} ", i, p_des->node.module.p_pages[i]);
+        if((i + 1) % 8 == 0){
+            tiny_db_printf("\n");
+        }
+    }
+    tiny_db_printf("\n");
+
+    TINY_DB_INFO("table headers: \n");
+    for(i = 0; i < p_des->head_cnt; i++){
+        tiny_db_printf("%s[%d]\t", p_des->p_head[i].title, i);
+    }
+    tiny_db_printf("\n");
+
+    p_module = &p_des->node;
+
+    if(!list_empty(&p_module->list_head)){
+        list_for_each_safe(p_head,p_tmp,&p_module->list_head){
+            p_node = list_entry(p_head, used_node_t, list);
+
+            if(NULL != p_node){
+                buffer_len = MAX_BUFFER_LEN;
+                TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
+                TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, NULL, -1, NULL) == TR_FAIL, _error, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
+                TD_TRUE_JUMP(_td_table_notify_data(p_des, p_this, p_node->node_id, NULL, p_data, callback) == TR_FAIL, _error, "copy failed\n");
+
+                notify_count ++;
+            }
+        }
+    }
+
+    TINY_DB_INFO("calc records: %d\n", notify_count);
+
+    _error:
+    return TR_SUCCESS;
 }

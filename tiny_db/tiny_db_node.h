@@ -46,6 +46,7 @@ typedef struct{
     td_uchar        node_length;
     td_uchar        node_cnt_in_1_page;
     td_uint16       last_node_id;
+    td_uint16       last_node_pos;
 
     td_uint16       free_node_count; // already saved node count
     td_uint16       free_node_buffer_size; // number of nodes buffer size
@@ -78,5 +79,7 @@ td_int32    tiny_db_node_destroy(td_int32 fd, mod_node_t *p_module);
 td_int32    tiny_db_node_update_by_id(td_int32 fd, mod_node_t *p_module, td_int16 node_id, td_char *buffer, td_int32 buffer_len);
 
 td_int32    tiny_db_node_update_by_pos(td_int32 fd, mod_node_t *p_module, used_node_t *p_node, td_char *buffer, td_int32 buffer_len);
+
+td_int32    tiny_db_node_get_start_offset_by_pos(td_int32 fd, mod_node_t *p_module, td_int16 node_pos);
 
 #endif

@@ -175,6 +175,7 @@ static td_int32 _td_node_set(td_int32 fd, mod_node_t *p_module, td_char *buffer,
     p_module->free_node_count -= need_cnt;
     p_node->node_pos = p_module->p_free_nodes[p_module->free_node_count];
     p_module->used_count ++;
+    p_module->last_node_pos = p_node->node_pos;
 
     _td_node_write(fd, p_module, &p_module->p_free_nodes[p_module->free_node_count], need_cnt, p_node->node_id, buffer, buffer_len);
     
@@ -551,4 +552,15 @@ td_int32    tiny_db_node_destroy(td_int32 fd, mod_node_t *p_module){
     tiny_db_module_delete(fd, &p_module->module);
 
     return TR_SUCCESS;
+}
+
+td_int32    tiny_db_node_get_start_offset_by_pos(td_int32 fd, mod_node_t *p_module, td_int16 node_pos){
+    td_int32 page_index = node_pos / p_module->node_cnt_in_1_page;
+    td_int32 node_index = node_pos % p_module->node_cnt_in_1_page, offset = 0;
+    //(tbl_node_t *)table_buffer;
+    offset = tiny_db_module_map(fd, &p_module->module, page_index);
+
+    offset = offset + NODE_CONTENT_START + node_index * p_module->node_length;
+
+    return offset + NODE_NEXT_LEN + NODE_LENGTH_LEN;
 }

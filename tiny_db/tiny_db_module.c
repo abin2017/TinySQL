@@ -184,9 +184,8 @@ td_int32 tiny_db_module_init(td_int32 fd, td_mod_info_t *p_mod){
             ret = tiny_db_insert_block(&block);
 
             if(ret != TR_SUCCESS){
-                TINY_DB_ERR("no memory\n");           
-            }else{
-                break;
+                TINY_DB_ERR("no memory\n"); 
+                break;          
             }
             page/*.page_id*/ = page_id;
         }else{
@@ -261,10 +260,10 @@ td_int32 tiny_db_module_enlarge(td_int32 fd, td_mod_info_t *p_mod){
 
                     tiny_db_assert(tiny_db_OsSeek(fd, offset) == TR_SUCCESS && tiny_db_OsRead(fd, s_buf, MODULE_PAGE_OFFSET) == MODULE_PAGE_OFFSET);
 
-                    p_cursor = &p_buffer[0];
+                    p_cursor = &s_buf[0];
                     val = TD_MAKE_WORD(p_cursor);
 
-                    p_cursor = &p_buffer[2];
+                    p_cursor = &s_buf[2];
                     prev_id = TD_MAKE_WORD(p_cursor);
 
                     tiny_db_assert(prev_id == TINY_INVALID_PAGE_ID && val == p_mod->module_id);

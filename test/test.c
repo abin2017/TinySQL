@@ -8,6 +8,38 @@
 #include "tiny_db_api.h"
 #include "tiny_db_platform.h"
 
+static int _tiny_db_dump_callback(void *data, int argc, char **argv, int *argv_len, int *argv_type, char **col_names){
+    int i = 0;
+
+    tiny_db_printf("[START]: ");
+    for(i = 0; i < argc; i++){
+    
+        if(argv_type[i] == TD_ELEM_TYPE_INTEGER || argv_type[i] == TD_ELEM_TYPE_AUTO_INCREASE){
+            if(argv_len[i] == 0){
+                tiny_db_printf("(null)\t");
+            }else{
+                tiny_db_printf("%d\t", (int)argv[i]);
+            }
+        }else{
+            if(argv[i] == NULL){
+                tiny_db_printf("(null)\t");
+            }else{
+                if(argv_len[i] == 0){
+                    tiny_db_printf("[len 0]\t");
+                }else{
+                    char bak = argv[i][argv_len[i]];
+                    argv[i][argv_len[i]] = 0;
+                    tiny_db_printf("%s\t", argv[i]);
+                    argv[i][argv_len[i]] = bak;
+                }
+            }
+        }
+    }
+    tiny_db_printf("\n");
+
+    return 0;
+}
+
 void tiny_db_test_insert_test1(int fd){
     td_elem_list_t      column = {0};
     td_elem_t           elements[12];  
@@ -29,7 +61,7 @@ void tiny_db_test_insert_test1(int fd){
     elements[1].type = TD_ELEM_TYPE_INTEGER;
 
 
-    char channel_url[32] = "aa-channel_url_test";
+    char channel_url[64] = "aa-channel_url_test01234567890123456789abcdefghijk";
     char timeshift[32] = "aa-timeshift_test";
     char prefix[32] = "aa-prefix_test";
     char name[32] = "aa-name_test";
@@ -60,7 +92,7 @@ void tiny_db_test_insert_test1(int fd){
     elements[10].p_tag = "reply";
     elements[10].content = (int *)1;
 
-    for(i = 1; i < 128; i ++){
+    for(i = 1; i < 244; i ++){
         if(channel_url[0] == 'z'){
             channel_url[0] = 'a';
             channel_url[1] = channel_url[1] + 1;
@@ -80,10 +112,10 @@ void tiny_db_test_insert_test1(int fd){
         elements[9].content = (int *)i;
         elements[10].content = (int *)i;
 
-        srand(time(NULL));
-        int random_number = rand();
+        //srand(time(NULL));
+        //int random_number = rand();
 
-        column.count = 6 + random_number%6;
+        column.count = 6 + i%6;//random_number%6;
 
         ret = tiny_db_api_insert_data(fd, "test1", &column, 0);
         tiny_db_assert(ret == TD_SUCCESS);
@@ -204,7 +236,9 @@ void tiny_db_test_create_table(int fd){
     tiny_db_assert(ret == TD_SUCCESS);
 }
 
-
+void tiny_db_test_dump_table_test1(int fd){
+    tiny_db_api_show_info(fd, "test1", NULL, _tiny_db_dump_callback);
+}
 
 int main() {
     int fd = 0;
@@ -215,6 +249,8 @@ int main() {
     //tiny_db_test_create_table(fd);
 
     //tiny_db_test_insert_test1(fd);
+
+    tiny_db_test_dump_table_test1(fd);
 
     tiny_db_api_close(fd);
 

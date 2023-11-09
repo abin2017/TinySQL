@@ -81,7 +81,7 @@ typedef struct{
 
 
 
-typedef int (*tiny_db_callback)(void *data, int argc, char **argv, int *argv_len, char **col_names);
+typedef int (*tiny_db_callback)(void *data, int argc, char **argv, int *argv_len, int *argv_type, char **col_names);
 
 /*
     0: 打开文件失败
@@ -104,5 +104,7 @@ int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements,
 int tiny_db_api_select_count(int handle, char *title, td_select_t *p_select, int param);
 
 int tiny_db_api_select_data(int handle, char *title, td_elem_list_t *p_elements, tiny_db_callback callback, td_select_t *p_select, void *p_data);
+
+int tiny_db_api_show_info(int handle, char *title, void *p_data, tiny_db_callback callback);
 
 #endif

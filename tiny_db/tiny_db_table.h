@@ -23,6 +23,7 @@ typedef struct{
     td_uchar        head_cnt;
     td_uchar        rev;
     td_uint16       node_id;
+    td_uint16       node_pos;
     tbl_head_t  *   p_head;
     tbl_head_t  *   p_head_proc;
     td_char     *   title;
@@ -58,5 +59,6 @@ td_int32    tiny_db_table_select_count(td_int32 fd, tbl_manage_t *p_this, char *
 
 td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *title, td_elem_list_t *p_elements, tiny_db_callback callback, td_select_t *p_select, void *p_data);
 
+td_int32    tiny_db_table_show_info(td_int32 fd, tbl_manage_t *p_this, char *title, void *p_data, tiny_db_callback callback);
 
 #endif

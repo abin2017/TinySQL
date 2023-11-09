@@ -195,7 +195,7 @@ int tiny_db_insert_block(st_data_block_t *in){
     int ret = -1;
 
     if(*in->current_cnt >= *in->block_cnt){
-        int resize = *in->current_cnt + in->enlarge_size;
+        int resize = *in->block_cnt + in->enlarge_size;
         void * p_new = tiny_db_realloc(*in->ppblock, resize * in->block_size);
 
         if(p_new){
@@ -203,7 +203,7 @@ int tiny_db_insert_block(st_data_block_t *in){
 
             memset(&p_tmp[*in->current_cnt * in->block_size], 0, in->enlarge_size * in->block_size);
             *in->ppblock = p_new;
-            *in->block_cnt += resize;
+            *in->block_cnt = resize;
         }else{
             return ret;
         }
@@ -213,9 +213,8 @@ int tiny_db_insert_block(st_data_block_t *in){
 
     memcpy(&p_c[*in->current_cnt * in->block_size], in->block, in->block_size);
     *in->current_cnt += 1;
-    ret = 0;
 
-    return ret;
+    return 0;
 }
 
 void    tiny_db_assert(int expression){
@@ -260,4 +259,5 @@ void tiny_db_printf(char *format, ...){
         fprintf(stderr, "An error occurred in custom_printf\n");
         return;
     }
+    fflush(stdout);
 }
