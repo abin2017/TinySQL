@@ -12,4 +12,9 @@ void    tiny_db_test_insert_test(int fd);
 
 void    test_tiny_dump_table(int fd, char *table);
 
+void    test_tiny_select_count(int fd);
+
+void    test_tiny_select_data(int fd);
+
+
 #endif

@@ -28,7 +28,7 @@ int main() {
         args[i] = NULL;
         optind = 0;
 
-        while ((opt = getopt(i, args, "imcq:d:")) != -1) {
+        while ((opt = getopt(i, args, "htimcq:d:")) != -1) {
             switch (opt) {
                 case 'i':
                     TINY_DB_INFO("init\n");
@@ -47,8 +47,19 @@ int main() {
                         goto _exit;
                     }
                     break;
-
                 
+                case 't':
+                    {
+                        test_tiny_select_count(fd);        
+                    }
+                    break;
+                
+                case 'h':
+                    {
+                        test_tiny_select_data(fd);
+                    }
+                    break;
+
                 case 'c':
                     {
                         tiny_db_test_create_table(fd);
@@ -78,7 +89,7 @@ int main() {
                         test_tiny_close_database(fd, 0);        
                         goto _exit;       
                     }else{
-                        printf("Usage: %s [-q exit] [-i init] [-m test] [-c create tables test1/2/3/4]\n\t[-d dump 'table']\n", args[0]);
+                        printf("Usage: %s [-q exit] [-i init] [-m test] [-c create tables test1/2/3/4]\n\t[-d dump 'table'] [-t show select total]\n", args[0]);
                     }
                     break;
             }

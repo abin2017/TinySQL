@@ -4,6 +4,8 @@
 #define TD_SUCCESS 0
 #define TD_FAIL -1
 
+#define TD_NO_LIMIT -1
+
 typedef enum{
     TD_ELEM_TYPE_STRING = 0,
     TD_ELEM_TYPE_INTEGER = 1,
@@ -30,13 +32,15 @@ typedef enum{
 }td_logical_t;
 
 typedef enum{
-    TD_ARITHMETIC_EQUAL             = 0, //== number & string
-    TD_ARITHMETIC_UNEQUAL           = 1, //!= number & string
+    TD_ARITHMETIC_EQUAL_NULL        = 0,
+    TD_ARITHMETIC_UNEQUAL_NULL      = 1,
+    TD_ARITHMETIC_EQUAL             = 2, //== number & string
+    TD_ARITHMETIC_UNEQUAL           = 3, //!= number & string
 
-    TD_ARITHMETIC_GREATER           = 2, //>  number
-    TD_ARITHMETIC_GREATER_QUUAL     = 3, //>= number
-    TD_ARITHMETIC_LESS              = 4, //<  number
-    TD_ARITHMETIC_LESS_QUUAL        = 5, //<= number
+    TD_ARITHMETIC_GREATER           = 4, //>  number
+    TD_ARITHMETIC_GREATER_QUUAL     = 5, //>= number
+    TD_ARITHMETIC_LESS              = 6, //<  number
+    TD_ARITHMETIC_LESS_QUUAL        = 7, //<= number
 
     TD_ARITHMETIC_MAX
 }td_arithmetic_t;

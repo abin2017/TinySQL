@@ -188,9 +188,27 @@ static td_int32 _td_table_buffer_preparse(tbl_desc_t *p_desc, tbl_manage_t *p_th
 
 static td_int32 _td_table_condition_arithmetic(td_uint32 *p_src, td_uint32 src_len, td_uint32 *p_base, td_arithmetic_t arithmetic, td_int32 be_string){
     td_int32 ret = TR_FAIL;
+
+    if(p_src == NULL && 
+        arithmetic != TD_ARITHMETIC_EQUAL_NULL &&
+        arithmetic != TD_ARITHMETIC_UNEQUAL_NULL){
+        return ret;          
+    }
     
     if(be_string == 0){
         switch(arithmetic){
+            case TD_ARITHMETIC_EQUAL_NULL:
+                if(p_src == NULL){
+                    ret = TR_SUCCESS;
+                }
+                break;
+            
+            case TD_ARITHMETIC_UNEQUAL_NULL:
+                if(p_src != NULL){
+                    ret = TR_SUCCESS;
+                }
+                break;
+
             case TD_ARITHMETIC_EQUAL:
                 if(*p_src == *p_base){
                     ret = TR_SUCCESS; 
@@ -238,6 +256,18 @@ static td_int32 _td_table_condition_arithmetic(td_uint32 *p_src, td_uint32 src_l
         p_str[src_len] = 0;
 
         switch(arithmetic){
+            case TD_ARITHMETIC_EQUAL_NULL:
+                if(p_src == NULL){
+                    ret = TR_SUCCESS;
+                }
+                break;
+            
+            case TD_ARITHMETIC_UNEQUAL_NULL:
+                if(p_src != NULL){
+                    ret = TR_SUCCESS;
+                }
+                break;
+                
             case TD_ARITHMETIC_EQUAL:
                 if(strcmp(p_str, p_dst) == 0){
                     ret = TR_SUCCESS; 
@@ -275,21 +305,29 @@ static td_int32 _td_table_condition_check(tbl_desc_t *p_desc, tbl_manage_t *p_th
         }else{
             if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_AUTO_INCREASE){
                 if(p_elem->arithmetic < TD_ARITHMETIC_MAX){
-                    ret = _td_table_condition_arithmetic((td_uint32 *)&node_id, 4, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                    ret = _td_table_condition_arithmetic((td_uint32 *)&node_id, 4, (td_uint32 *)&p_elem->content, p_elem->arithmetic, 0);
                 }
             }else
             if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_INTEGER){
                 if(p_elem->arithmetic < TD_ARITHMETIC_MAX){
-                    p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
-                    val = TD_MAKE_DWORD(p_cursor);
-                    ret = _td_table_condition_arithmetic((td_uint32 *)&val, 4, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                    if(p_head[p_elem->tag_idx].buf_item.offset > 0){
+                        p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
+                        val = TD_MAKE_DWORD(p_cursor);
+                        ret = _td_table_condition_arithmetic((td_uint32 *)&val, 4, (td_uint32 *)&p_elem->content, p_elem->arithmetic, 0);
+                    }else{
+                        ret = _td_table_condition_arithmetic(NULL, 0, (td_uint32 *)&p_elem->content, p_elem->arithmetic, 0);
+                    }
                 }
             }else
             if(p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_STRING || p_head[p_elem->tag_idx].attr_mask == TD_ELEM_TYPE_STRING_FIXED){
-                if(p_elem->arithmetic < TD_ARITHMETIC_UNEQUAL && p_elem->content && p_head[p_elem->tag_idx].buf_item.length){
-                    p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
-                    val = p_head[p_elem->tag_idx].buf_item.length;
-                    ret = _td_table_condition_arithmetic((td_uint32 *)p_cursor, val, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                if(p_elem->arithmetic <= TD_ARITHMETIC_UNEQUAL && p_elem->content && p_head[p_elem->tag_idx].buf_item.length){
+                    if(p_head[p_elem->tag_idx].buf_item.offset > 0){
+                        p_cursor = &p_this->buffer[p_head[p_elem->tag_idx].buf_item.offset];
+                        val = p_head[p_elem->tag_idx].buf_item.length;
+                        ret = _td_table_condition_arithmetic((td_uint32 *)p_cursor, val, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                    }else{
+                        ret = _td_table_condition_arithmetic(NULL, 0, (td_uint32 *)p_elem->content, p_elem->arithmetic, 0);
+                    }
                 }
             }
         }
@@ -967,15 +1005,15 @@ td_int32    tiny_db_table_select_count(td_int32 fd, tbl_manage_t *p_this, char *
         list_head_t *p_head = NULL;
         list_head_t *p_tmp  = NULL;
         used_node_t *p_node = NULL;
-        int buffer_len = MAX_BUFFER_LEN;
-
+        
         if(!list_empty(&p_module->list_head)){
             list_for_each_safe(p_head,p_tmp,&p_module->list_head){
+                int buffer_len = MAX_BUFFER_LEN;
                 p_node = list_entry(p_head, used_node_t, list);
 
                 if(NULL != p_node){
-                    TD_TRUE_RETVAL(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, TR_FAIL, "get node fail [%s, %s]", p_node->node_id, p_node->node_pos);
-                    TD_TRUE_RETVAL(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, 0, NULL) == TR_FAIL, TR_FAIL, "node [%s, %s], parse fail", p_node->node_id, p_node->node_pos);
+                    TD_TRUE_RETVAL(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, TR_FAIL, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
+                    TD_TRUE_RETVAL(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, 0, NULL) == TR_FAIL, TR_FAIL, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
 
                     if(_td_table_condition_check(p_des, p_this, p_node->node_id, &p_select->cond) == TR_SUCCESS){
                         ret ++;
@@ -1013,7 +1051,9 @@ td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *t
     p_des = _td_table_get_desinfo(fd, p_this, title);
     TD_TRUE_RETVAL(p_des == NULL, TR_FAIL, "table %s is not exist\n", title);
 
-    TD_TRUE_RETVAL(_td_table_element_tag2index(p_des->p_head, p_des->head_cnt, p_elements) == TR_FAIL, TR_FAIL, "elements tag fail\n");
+    if(p_elements){
+        TD_TRUE_RETVAL(_td_table_element_tag2index(p_des->p_head, p_des->head_cnt, p_elements) == TR_FAIL, TR_FAIL, "elements tag fail\n");
+    }
 
     p_module = &p_des->node;
     TD_TRUE_RETVAL(p_module->used_count <= 0, TR_FAIL, "table %s empty\n", title);
@@ -1054,15 +1094,16 @@ td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *t
             p_node = list_entry(p_head, used_node_t, list);
 
             if(NULL != p_node){
-                TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%s, %s]", p_node->node_id, p_node->node_pos);
-                TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, p_select->order.tag_idx, &value) == TR_FAIL, _error, "node [%s, %s], parse fail", p_node->node_id, p_node->node_pos);
+                buffer_len = MAX_BUFFER_LEN;
+                TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
+                TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, p_select->order.tag_idx, &value) == TR_FAIL, _error, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
 
                 if(p_select && p_select->cond.count && _td_table_condition_check(p_des, p_this, p_node->node_id, &p_select->cond) != TR_SUCCESS){
                     continue;
                 }
 
                 if(p_sels == NULL){
-                    if(p_select->limit_count == -1 || notify_count < p_select->limit_count){
+                    if(p_select->limit_count == TD_NO_LIMIT || notify_count < p_select->limit_count){
                         TD_TRUE_JUMP(_td_table_notify_data(p_des, p_this, p_node->node_id, p_elements, p_data, callback) == TR_FAIL, _error, "copy failed\n");
 
                         notify_count ++;            
@@ -1121,10 +1162,11 @@ td_int32    tiny_db_table_select_data(td_int32 fd, tbl_manage_t *p_this, char *t
 
             while(p_nouse){
                 p_node = p_nouse->p_used_node;
+                buffer_len = MAX_BUFFER_LEN;
                 TD_TRUE_JUMP(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, _error, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
                 TD_TRUE_JUMP(_td_table_buffer_preparse(p_des, p_this, buffer_len, &p_select->cond, p_select->order.tag_idx, &value) == TR_FAIL, _error, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
 
-                if(p_select->limit_count == -1 || notify_count < p_select->limit_count){
+                if(p_select->limit_count == TD_NO_LIMIT || notify_count < p_select->limit_count){
                     TD_TRUE_JUMP(_td_table_notify_data(p_des, p_this, p_node->node_id, p_elements, p_data, callback) == TR_FAIL, _error, "copy failed\n");
 
                     notify_count ++;            

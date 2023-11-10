@@ -10,6 +10,17 @@
 
 static int _tiny_db_dump_callback(void *data, int argc, char **argv, int *argv_len, int *argv_type, char **col_names){
     int i = 0;
+    int *phandle = (int *)data;
+    if(*phandle){
+        *phandle = 0;
+
+        tiny_db_printf("\e[1;34m[TITLE]: ");
+
+        for(i = 0; i < argc; i++){
+            tiny_db_printf("%s\t", col_names[i]);
+        }
+        tiny_db_printf("\033[0m\n");
+    }
 
     tiny_db_printf("[START]: ");
     for(i = 0; i < argc; i++){
@@ -105,9 +116,9 @@ void tiny_db_test_insert_test(int fd){
         memcpy(name, channel_url, 2);
         memcpy(c_type, channel_url, 2);
 
-        elements[0].content = (int *)i;
-        elements[1].content = (int *)i;
-        elements[7].content = (int *)i;
+        elements[0].content = (int *)(i%5);
+        elements[1].content = (int *)(i%10);
+        elements[7].content = (int *)(i%20);
         elements[8].content = (int *)i;
         elements[9].content = (int *)i;
         elements[10].content = (int *)i;
@@ -129,7 +140,7 @@ void tiny_db_test_insert_test(int fd){
     strcpy(name, "aa-flag_tes");
     i = 1;
     for(i = 1; i < 244; i ++){
-        elements[0].content = (int *)i;
+        elements[0].content = (int *)(i%5);
         elements[1].content = (int *)channel_url;
         elements[2].content = (int *)name;
 
@@ -306,4 +317,173 @@ void test_tiny_close_database(int fd, int be_del){
 
 void test_tiny_dump_table(int fd, char *table){
     tiny_db_api_show_info(fd, table, NULL, _tiny_db_dump_callback);
+}
+
+
+void test_tiny_select_count(int fd){
+    td_select_t select;
+    td_cond_elem_t cond_elem[2];
+    int count = 0;
+
+    memset(&select, 0, sizeof(select));
+    memset(cond_elem, 0, sizeof(td_cond_elem_t) * 2);
+    
+    count = tiny_db_api_select_count(fd, "test1", NULL, 0);
+    TINY_DB_DBG("test1 total count %d\n", count);
+
+    select.cond.p_elements = cond_elem;
+    select.cond.count = 1;
+    select.cond.logic = TD_LOGIC_AND;
+
+    cond_elem[0].arithmetic = TD_ARITHMETIC_EQUAL;
+    cond_elem[0].p_tag = "type";
+    cond_elem[0].content = (int *)4;
+
+    count = tiny_db_api_select_count(fd, "test1", &select, 0);
+    TINY_DB_DBG("test1 'type'==4 count %d\n", count);
+
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_EQUAL;
+    cond_elem[1].p_tag = "_order";
+    cond_elem[1].content = (int *)4;
+    count = tiny_db_api_select_count(fd, "test1", &select, 0);
+    TINY_DB_DBG("test1 'type'==4 and '_order'==4 count %d\n", count);
+
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_UNEQUAL;
+    cond_elem[1].p_tag = "_order";
+    cond_elem[1].content = (int *)4;
+    count = tiny_db_api_select_count(fd, "test1", &select, 0);
+    TINY_DB_DBG("test1 'type'==4 and '_order'!=4 count %d\n", count);
+}
+
+void test_tiny_select_data(int fd){
+    td_select_t select;
+    td_cond_elem_t cond_elem[3];
+    int ret = TD_SUCCESS;
+    int show_title = 0;
+    memset(&select, 0, sizeof(select));
+    memset(cond_elem, 0, sizeof(td_cond_elem_t) * 3);
+
+    select.cond.p_elements = cond_elem;
+    select.cond.count = 1;
+    select.cond.logic = TD_LOGIC_AND;
+    select.limit_count = TD_NO_LIMIT;
+    
+    cond_elem[0].arithmetic = TD_ARITHMETIC_EQUAL;
+    cond_elem[0].p_tag = "type";
+    cond_elem[0].content = (int *)4;
+
+    show_title = 1;
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 'type'==4  %d\n", ret);
+
+    show_title = 1;
+    select.cond.logic = TD_LOGIC_OR;
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_EQUAL;
+    cond_elem[1].p_tag = "timeshift";
+    cond_elem[1].content = (int *)"ca-timeshift_test";
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 'type'==4 or timeshift=ca-timeshift_test %d\n", ret);
+
+
+    select.cond.logic = TD_LOGIC_AND;
+    select.cond.count = 1;
+
+    show_title = 1;
+    select.limit_count = 5;
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 'limit'=%d 'type'=4  %d\n", select.limit_count, ret);
+
+    show_title = 1;
+    select.limit_count = 10;
+    select.order.type = TD_ORDER_DESC;
+    select.order.p_tag = "id";
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+    show_title = 1;
+    select.limit_count = 30;
+    select.order.type = TD_ORDER_ASC;
+    select.order.p_tag = "_order";
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+    show_title = 1;
+    select.limit_count = TD_NO_LIMIT;
+    select.order.type = TD_ORDER_ASC;
+    select.order.p_tag = "sub";
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_EQUAL;
+    cond_elem[1].p_tag = "_order";
+    cond_elem[1].content = (int *)4;
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+    
+    show_title = 1;
+    select.limit_count = TD_NO_LIMIT;
+    select.order.type = TD_ORDER_ASC;
+    select.order.p_tag = "sub";
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_UNEQUAL;
+    cond_elem[1].p_tag = "timeshift";
+    cond_elem[1].content = (int *)"vi-timeshift_test";
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+    show_title = 1;
+    select.limit_count = TD_NO_LIMIT;
+    select.order.type = TD_ORDER_ASC;
+    select.order.p_tag = "sub";
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_UNEQUAL;
+    cond_elem[1].p_tag = "_order";
+    cond_elem[1].content = (int *)4;
+    ret = tiny_db_api_select_data(fd, "test1", NULL, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+
+
+    show_title = 1;
+    select.cond.count = 1;
+    td_elem_list_t s_list;
+    td_elem_t      s_elems[6];
+    
+    s_list.count = 6;
+    s_list.p_elem = s_elems;
+    s_elems[0].type = TD_ELEM_TYPE_AUTO_INCREASE;
+    s_elems[0].p_tag = "id";
+    s_elems[1].type = TD_ELEM_TYPE_STRING_FIXED;
+    s_elems[1].p_tag = "channel_url";
+    s_elems[2].type = TD_ELEM_TYPE_STRING;
+    s_elems[2].p_tag = "timeshift";
+    s_elems[3].type = TD_ELEM_TYPE_INTEGER;
+    s_elems[3].p_tag = "sub";
+    s_elems[4].type = TD_ELEM_TYPE_INTEGER;
+    s_elems[4].p_tag = "type";
+    s_elems[5].type = TD_ELEM_TYPE_STRING;
+    s_elems[5].p_tag = "c_type";
+    ret = tiny_db_api_select_data(fd, "test1", &s_list, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+
+    show_title = 1;
+    select.cond.count = 2;
+    cond_elem[1].arithmetic = TD_ARITHMETIC_EQUAL_NULL;
+    cond_elem[1].p_tag = "sub";
+    cond_elem[1].content = (int *)4;
+    ret = tiny_db_api_select_data(fd, "test1", &s_list, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
+
+    show_title = 1;
+    select.cond.count = 3;
+    cond_elem[2].arithmetic = TD_ARITHMETIC_UNEQUAL_NULL;
+    cond_elem[2].p_tag = "c_type";
+    cond_elem[2].content = (int *)4;
+    ret = tiny_db_api_select_data(fd, "test1", &s_list, _tiny_db_dump_callback, &select, &show_title);
+    TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+
 }
