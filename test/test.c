@@ -40,7 +40,7 @@ static int _tiny_db_dump_callback(void *data, int argc, char **argv, int *argv_l
     return 0;
 }
 
-void tiny_db_test_insert_test1(int fd){
+void tiny_db_test_insert_test(int fd){
     td_elem_list_t      column = {0};
     td_elem_t           elements[12];  
     int ret = TD_SUCCESS;
@@ -120,6 +120,32 @@ void tiny_db_test_insert_test1(int fd){
         ret = tiny_db_api_insert_data(fd, "test1", &column, 0);
         tiny_db_assert(ret == TD_SUCCESS);
     }
+
+    elements[0].p_tag = "id";
+    elements[1].p_tag = "language_name";
+    elements[2].p_tag = "flag";
+
+    strcpy(channel_url, "aa-language_name_test01234567890123456789abcdefghijk");
+    strcpy(name, "aa-flag_tes");
+    i = 1;
+    for(i = 1; i < 244; i ++){
+        elements[0].content = (int *)i;
+        elements[1].content = (int *)channel_url;
+        elements[2].content = (int *)name;
+
+        if(channel_url[0] == 'z'){
+            channel_url[0] = 'a';
+            channel_url[1] = channel_url[1] + 1;
+        }else{
+            channel_url[0] = channel_url[0] + 1;
+        }
+        memcpy(name, channel_url, 2);
+
+        column.count = 2 + i%2;
+
+        ret = tiny_db_api_insert_data(fd, "test3", &column, 0);
+        tiny_db_assert(ret == TD_SUCCESS);
+    }    
 }
 
 void tiny_db_test_create_table(int fd){
@@ -236,10 +262,15 @@ void tiny_db_test_create_table(int fd){
     tiny_db_assert(ret == TD_SUCCESS);
 }
 
-void tiny_db_test_dump_table_test1(int fd){
+void tiny_db_test_dump_table_test(int fd){
     tiny_db_api_show_info(fd, "test1", NULL, _tiny_db_dump_callback);
+    tiny_db_api_show_info(fd, "test3", NULL, _tiny_db_dump_callback);
 }
 
+
+
+
+#if 0
 int main() {
     int fd = 0;
 
@@ -248,12 +279,31 @@ int main() {
 
     //tiny_db_test_create_table(fd);
 
-    //tiny_db_test_insert_test1(fd);
+    //tiny_db_test_insert_test(fd);
 
-    tiny_db_test_dump_table_test1(fd);
+    tiny_db_test_dump_table_test(fd);
+
+
 
     tiny_db_api_close(fd);
 
-    TINY_DB_MEMORY_USAGE();
+    
     return 0;
+}
+#endif
+
+int test_tiny_open_database(){
+    return tiny_db_api_open("./test.db");
+}
+
+void test_tiny_close_database(int fd, int be_del){
+    tiny_db_api_close(fd);
+
+    if(be_del){
+        remove("./test.db");
+    }
+}
+
+void test_tiny_dump_table(int fd, char *table){
+    tiny_db_api_show_info(fd, table, NULL, _tiny_db_dump_callback);
 }

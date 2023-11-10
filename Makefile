@@ -14,7 +14,7 @@ OBJS  := $(OBJDIR)/tiny_db_platform.o \
 OBJS_GRAMMER := $(OBJDIR)/parse.tab.o \
 				 $(OBJDIR)/sql_porting.o \
 
-OBJS_TEST := $(OBJDIR)/test.o	
+OBJS_TEST := $(OBJDIR)/test.o	$(OBJDIR)/command.o
 
 OBJS_COMPILE := $(OBJS) 
 
