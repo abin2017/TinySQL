@@ -113,4 +113,8 @@ int tiny_db_api_select_data(int handle, char *title, td_elem_list_t *p_elements,
 
 int tiny_db_api_show_info(int handle, char *title, void *p_data, tiny_db_callback callback);
 
+void tiny_db_api_lock(int handle);
+
+void tiny_db_api_unlock(int handle);
+
 #endif

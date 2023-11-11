@@ -19,6 +19,7 @@
 
 typedef struct{
     int                 fd;
+    int                 lock; 
     tbl_manage_t        entrance;
 }tiny_db_t;
 
@@ -31,14 +32,22 @@ int tiny_db_api_open(char *path){
 
     p_this->fd = tiny_db_OsOpen(path);
     TD_TRUE_JUMP(p_this->fd == 0, _err, "%s open fail\n", path);
+
+    tiny_db_OslockCreate(&p_this->lock, 1);
+
     TD_TRUE_JUMP(TR_SUCCESS != tiny_db_table_init(p_this->fd, &p_this->entrance), _err, "%s open fail\n", path);
 
     return (int)p_this;
     _err:
         if(p_this){
+            if(p_this->lock){
+                tiny_db_OslockDelete(p_this->lock);
+            }
+
             if(p_this->fd){
                 tiny_db_OsClose(p_this->fd);
             }
+
             tiny_db_free(p_this);
         }
         return 0;
@@ -54,6 +63,10 @@ void tiny_db_api_close(int handle){
 
         if(p_this->fd){
             tiny_db_OsClose(p_this->fd);
+        }
+
+        if(p_this->lock){
+            tiny_db_OslockDelete(p_this->lock);
         }
 
         tiny_db_free(p_this);
@@ -139,4 +152,16 @@ int tiny_db_api_show_info(int handle, char *title, void *p_data, tiny_db_callbac
     TD_TRUE_RETVAL(NULL == title, 0, "title %p\n", title);
 
     return tiny_db_table_show_info(p_this->fd, &p_this->entrance, title, p_data, callback);
+}
+
+void tiny_db_api_lock(int handle){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+    
+    tiny_db_OsLock(p_this->lock);
+}
+
+void tiny_db_api_unlock(int handle){
+    tiny_db_t *p_this = (tiny_db_t *)handle;
+    
+    tiny_db_OsUnlock(p_this->lock);
 }
