@@ -966,15 +966,15 @@ td_int32    tiny_db_table_delete(td_int32 fd, tbl_manage_t *p_this, char *title,
     list_head_t *p_head = NULL;
     list_head_t *p_tmp  = NULL;
     used_node_t *p_node = NULL;
-    int buffer_len = MAX_BUFFER_LEN;
 
     if(!list_empty(&p_module->list_head)){
         list_for_each_safe(p_head,p_tmp,&p_module->list_head){
+            int buffer_len = MAX_BUFFER_LEN;
             p_node = list_entry(p_head, used_node_t, list);
 
             if(NULL != p_node){
-                TD_TRUE_RETVAL(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, TR_FAIL, "get node fail [%s, %s]", p_node->node_id, p_node->node_pos);
-                TD_TRUE_RETVAL(_td_table_buffer_preparse(p_des, p_this, buffer_len, p_cond, 0, NULL) == TR_FAIL, TR_FAIL, "node [%s, %s], parse fail", p_node->node_id, p_node->node_pos);
+                TD_TRUE_RETVAL(tiny_db_node_get_by_pos(fd, p_module, p_node, p_this->buffer, &buffer_len) == TR_FAIL, TR_FAIL, "get node fail [%d, %d]", p_node->node_id, p_node->node_pos);
+                TD_TRUE_RETVAL(_td_table_buffer_preparse(p_des, p_this, buffer_len, p_cond, 0, NULL) == TR_FAIL, TR_FAIL, "node [%d, %d], parse fail", p_node->node_id, p_node->node_pos);
 
                 if(_td_table_condition_check(p_des, p_this, p_node->node_id, p_cond) == TR_SUCCESS){
 

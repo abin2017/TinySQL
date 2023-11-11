@@ -103,6 +103,8 @@ int tiny_db_api_edit_table(int handle, char *title, td_elem_list_t *p_column, in
 
 int tiny_db_api_insert_data(int handle, char *title, td_elem_list_t *p_elements, int param);
 
+int tiny_db_api_delete_data(int handle, char *title, td_condition_t *p_cond, int param);
+
 int tiny_db_api_update_data(int handle, char *title, td_elem_list_t *p_elements, td_condition_t *p_cond, int param);
 
 int tiny_db_api_select_count(int handle, char *title, td_select_t *p_select, int param);

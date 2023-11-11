@@ -540,3 +540,41 @@ void test_tiny_update_data(int fd, int id){
     ret = tiny_db_api_update_data(fd, "test1", &elements, &cond, 0);
     TINY_DB_WARN("test1 ret=%d '_order'=%d\n", ret, id);
 }
+
+void test_tiny_delete_data(int fd, int id){
+    td_condition_t cond;
+    td_cond_elem_t c_item[1];
+    int count = 0;
+
+    memset(&cond, 0, sizeof(td_condition_t));
+    memset(c_item, 0, sizeof(td_cond_elem_t) * 1);
+
+
+    count = tiny_db_api_select_count(fd, "test1", NULL, 0);
+    TINY_DB_DBG("test1 total count %d\n", count);
+
+    cond.count = 1;
+    cond.logic = TD_LOGIC_AND;
+    cond.p_elements = c_item;
+
+    c_item[0].arithmetic = TD_ARITHMETIC_EQUAL;
+    c_item[0].p_tag = "id";
+    c_item[0].content = (int *)id;
+    tiny_db_api_delete_data(fd, "test1", &cond, 0);
+
+    test_tiny_dump_table(fd, "test1");
+
+    count = tiny_db_api_select_count(fd, "test1", NULL, 0);
+    TINY_DB_DBG("test1 total count %d\n", count);
+
+
+    c_item[0].arithmetic = TD_ARITHMETIC_UNEQUAL_NULL;
+    c_item[0].p_tag = "c_type";
+    c_item[0].content = (int *)id;
+    tiny_db_api_delete_data(fd, "test1", &cond, 0);
+
+    test_tiny_dump_table(fd, "test1");
+
+    count = tiny_db_api_select_count(fd, "test1", NULL, 0);
+    TINY_DB_DBG("test1 total count %d\n", count);
+}
