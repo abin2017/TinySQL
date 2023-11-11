@@ -20,4 +20,6 @@ void    test_tiny_update_data(int fd, int id);
 
 void    test_tiny_delete_data(int fd, int id);
 
+void    test_tiny_delete_table(int fd, char *table);
+
 #endif

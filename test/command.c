@@ -28,7 +28,7 @@ int main() {
         args[i] = NULL;
         optind = 0;
 
-        while ((opt = getopt(i, args, "htimcq:d:u:s:")) != -1) {
+        while ((opt = getopt(i, args, "htimcq:d:u:s:a:")) != -1) {
             switch (opt) {
                 case 'i':
                     TINY_DB_INFO("init\n");
@@ -53,6 +53,15 @@ int main() {
                         char * param = (char*)optarg;
                         if(optarg){
                             test_tiny_delete_data(fd, atoi(param));
+                        }
+                    }
+                    break;
+
+                case 'a':
+                    {
+                        char * param = (char*)optarg;
+                        if(optarg){
+                            test_tiny_delete_table(fd, param);
                         }
                     }
                     break;

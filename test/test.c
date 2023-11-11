@@ -578,3 +578,10 @@ void test_tiny_delete_data(int fd, int id){
     count = tiny_db_api_select_count(fd, "test1", NULL, 0);
     TINY_DB_DBG("test1 total count %d\n", count);
 }
+
+
+void test_tiny_delete_table(int fd, char *table){
+    int ret = tiny_db_api_delete_table(fd, table, 0);
+
+    TINY_DB_DBG("ret %d\n", ret);
+}
