@@ -16,5 +16,6 @@ void    test_tiny_select_count(int fd);
 
 void    test_tiny_select_data(int fd);
 
+void    test_tiny_update_data(int fd, int id);
 
 #endif

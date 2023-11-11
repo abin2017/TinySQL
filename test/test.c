@@ -11,7 +11,7 @@
 static int _tiny_db_dump_callback(void *data, int argc, char **argv, int *argv_len, int *argv_type, char **col_names){
     int i = 0;
     int *phandle = (int *)data;
-    if(*phandle){
+    if(phandle && *phandle){
         *phandle = 0;
 
         tiny_db_printf("\e[1;34m[TITLE]: ");
@@ -485,5 +485,58 @@ void test_tiny_select_data(int fd){
     cond_elem[2].content = (int *)4;
     ret = tiny_db_api_select_data(fd, "test1", &s_list, _tiny_db_dump_callback, &select, &show_title);
     TINY_DB_DBG("test1 ret=%d 'limit'=%d 'type'=4, order=%s, tag=%s\n", ret, select.limit_count, select.order.type == TD_ORDER_DESC ? "DESC" : "ASC", select.order.p_tag);
+}
 
+void test_tiny_update_data(int fd, int id){
+    int ret = TD_SUCCESS;
+    td_condition_t cond;
+    td_elem_list_t elements;
+    td_cond_elem_t c_item[1];
+    td_elem_t      m_item[2];
+
+    char t_str[96] = {0};
+
+    memset(&cond, 0, sizeof(td_condition_t));
+    memset(&elements, 0, sizeof(td_elem_list_t));
+    memset(c_item, 0, sizeof(td_cond_elem_t) * 1);
+
+    cond.p_elements = c_item;
+    cond.count = 1;
+    cond.logic = TD_LOGIC_AND;
+
+    c_item[0].arithmetic = TD_ARITHMETIC_EQUAL;
+    c_item[0].p_tag = "id";
+    c_item[0].content = (int *)id;
+
+    elements.count = 2;
+    elements.p_elem = m_item;
+
+    m_item[0].type = TD_ELEM_TYPE_INTEGER;
+    m_item[0].p_tag = "reply";
+    m_item[0].content = (int *)(id * 100);
+
+    m_item[1].type = TD_ELEM_TYPE_STRING_FIXED;
+    m_item[1].p_tag = "c_type";
+    m_item[1].content = (int *)t_str;
+
+    snprintf(t_str, 95, "modify c_type %d abcdefg123456789abcdefg123456789abcdefg123456789", id);
+
+    ret = tiny_db_api_update_data(fd, "test1", &elements, &cond, 0);
+    TINY_DB_WARN("test1 ret=%d 'nodeId'=%d\n", ret, id);
+
+    id += 2;
+    c_item[0].p_tag = "_order";
+    c_item[0].content = (int *)id;
+
+    m_item[0].p_tag = "reply";
+    m_item[0].content = (int *)(id * 100);
+
+    m_item[1].type = TD_ELEM_TYPE_STRING;
+    m_item[1].p_tag = "channel_url";
+    m_item[1].content = (int *)t_str;
+
+    snprintf(t_str, 95, "modify channel_url %d abcdefg123456789abcdefg123456789abcdefg123456789", id);
+
+    ret = tiny_db_api_update_data(fd, "test1", &elements, &cond, 0);
+    TINY_DB_WARN("test1 ret=%d '_order'=%d\n", ret, id);
 }

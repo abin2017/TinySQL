@@ -212,7 +212,7 @@ static td_int32 _td_node_del_by_pos(td_int32 fd, mod_node_t *p_module, used_node
         node_buff = offset + NODE_CONTENT_START + node_index * p_module->node_length;
 
         tiny_db_assert(tiny_db_OsSeek(fd, node_head) == TR_SUCCESS);
-        tiny_db_assert(tiny_db_OsRead(fd, &header, sizeof(db_node_t)) == 4 && (header.node_state == RECORD_STATE_START || header.node_state == RECORD_STATE_UESD) && (header.node_id != p_rec->node_id));
+        tiny_db_assert(tiny_db_OsRead(fd, &header, sizeof(db_node_t)) == 4 && (header.node_state == RECORD_STATE_START || header.node_state == RECORD_STATE_UESD) && (header.node_id == p_rec->node_id));
         header.node_state = RECORD_STATE_FREE;
         tiny_db_assert(tiny_db_OsSeek(fd, node_head) == TR_SUCCESS);
         tiny_db_assert(tiny_db_OsWrite(fd, &header, sizeof(db_node_t)) == 4);

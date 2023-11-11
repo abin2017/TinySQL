@@ -28,7 +28,7 @@ int main() {
         args[i] = NULL;
         optind = 0;
 
-        while ((opt = getopt(i, args, "htimcq:d:")) != -1) {
+        while ((opt = getopt(i, args, "htimcq:d:u:")) != -1) {
             switch (opt) {
                 case 'i':
                     TINY_DB_INFO("init\n");
@@ -45,6 +45,15 @@ int main() {
                             test_tiny_close_database(fd, 0);        
                         }
                         goto _exit;
+                    }
+                    break;
+                
+                case 'u':
+                    {
+                        char * param = (char*)optarg;
+                        if(optarg){
+                            test_tiny_update_data(fd, atoi(param));
+                        }
                     }
                     break;
                 
